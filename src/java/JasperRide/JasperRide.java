@@ -7,12 +7,14 @@ package JasperRide;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperFillManager;
@@ -30,7 +32,7 @@ import org.w3c.dom.NodeList;
  */
 public class JasperRide {
 
-    public void CrearRide(org.w3c.dom.Document xmlComprobante, String numAutorizacion, String dirGuardarDoc, String dirLogo, String ireportDir) {
+    public void CrearRide(org.w3c.dom.Document xmlComprobante, String numAutorizacion, String dirGuardarDoc, String dirLogo, String ireportDir) throws FileNotFoundException, JRException {
         dirGuardarDoc = dirGuardarDoc.replace(".xml", ".pdf");
         String ruc = xmlComprobante.getElementsByTagName("ruc").item(0).getTextContent();
         String establecimiento = xmlComprobante.getElementsByTagName("estab").item(0).getTextContent();
@@ -129,6 +131,11 @@ public class JasperRide {
 
             String razonSocialComprador = xmlComprobante.getElementsByTagName("razonSocialComprador").item(0).getTextContent();
             String identificacionComprador = xmlComprobante.getElementsByTagName("identificacionComprador").item(0).getTextContent();
+            if (xmlComprobante.getElementsByTagName("direccionComprador").getLength() != 0) {
+                String direccionComprador = xmlComprobante.getElementsByTagName("direccionComprador").item(0).getTextContent();
+                factura.setDireccionComprador(direccionComprador);
+            }
+
             String fechaEmision = xmlComprobante.getElementsByTagName("fechaEmision").item(0).getTextContent();
             String guiaRemision = "";
             if (xmlComprobante.getElementsByTagName("guiaRemision").getLength() != 0) {
@@ -192,6 +199,41 @@ public class JasperRide {
             factura.setSubTotalSinImpuesto(xmlComprobante.getElementsByTagName("totalSinImpuestos").item(0).getTextContent());
             factura.setTotalDescuento(xmlComprobante.getElementsByTagName("totalDescuento").item(0).getTextContent());
             factura.setImporteTotal(importeTotal);
+            if (xmlComprobante.getElementsByTagName("totalSubsidio").getLength() != 0) {
+                String totalSubsidioSinIva = xmlComprobante.getElementsByTagName("totalSubsidio").item(0).getTextContent();
+                double ahorroPorSubsidio = Double.parseDouble(totalSubsidioSinIva) * 0.12 + Double.parseDouble(totalSubsidioSinIva);
+                double totalSinSubsidio = Double.parseDouble(importeTotal) + ahorroPorSubsidio;
+                factura.setTotalSinSubsidio(formatDouble(totalSinSubsidio));
+                factura.setAhorroSubsidio(formatDouble(ahorroPorSubsidio));
+            }
+            NodeList reembolsos = xmlComprobante.getElementsByTagName("reembolsoDetalle");
+            if (reembolsos.getLength() > 0) {
+                cantidad = reembolsos.getLength();
+                for (int i = 0; i < cantidad; i++) {
+                    org.w3c.dom.Element element = (org.w3c.dom.Element) reembolsos.item(i);
+                    JasperComprobantes.ReembolsoFactura reembolsoFactura = new JasperComprobantes.ReembolsoFactura();
+                    reembolsoFactura.setIdentificacionProveedorReembolso(element.getElementsByTagName("identificacionProveedorReembolso").item(0).getTextContent());
+                    reembolsoFactura.setTipoDocumento("FACTURA");
+
+                    String noDocumento = element.getElementsByTagName("estabDocReembolso").item(0).getTextContent()
+                            + "-" + element.getElementsByTagName("ptoEmiDocReembolso").item(0).getTextContent()
+                            + "-" + element.getElementsByTagName("secuencialDocReembolso").item(0).getTextContent();
+                    reembolsoFactura.setNoDocumento(noDocumento);
+                    reembolsoFactura.setFechaEmisionDocReembolso(element.getElementsByTagName("fechaEmisionDocReembolso").item(0).getTextContent());
+
+                    NodeList impuestos = element.getElementsByTagName("detalleImpuestos");
+                    org.w3c.dom.Element impuesto = (org.w3c.dom.Element) impuestos.item(0);
+                    reembolsoFactura.setImpuesto("IVA");
+                    reembolsoFactura.setPorcentaje(impuesto.getElementsByTagName("tarifa").item(0).getTextContent() + "%");
+                    reembolsoFactura.setBaseImponible(Double.parseDouble(impuesto.getElementsByTagName("baseImponibleReembolso").item(0).getTextContent()));
+                    reembolsoFactura.setValorImpuesto(Double.parseDouble(impuesto.getElementsByTagName("impuestoReembolso").item(0).getTextContent()));
+                    double total = reembolsoFactura.getBaseImponible() + reembolsoFactura.getValorImpuesto();
+                    reembolsoFactura.setTotal(total);
+                    factura.getReembolso().add(reembolsoFactura);
+
+                }
+            }
+
             data.add(factura);
         }
         if (codDoc.equals("03")) {
@@ -211,7 +253,7 @@ public class JasperRide {
             liqCompra.setTipoEmision("NORMAL");
             liqCompra.setClaveAcc(claveAcceso);
 
-            String razonSocialProveedor= xmlComprobante.getElementsByTagName("razonSocialProveedor").item(0).getTextContent();
+            String razonSocialProveedor = xmlComprobante.getElementsByTagName("razonSocialProveedor").item(0).getTextContent();
             String identificacionProveedor = xmlComprobante.getElementsByTagName("identificacionProveedor").item(0).getTextContent();
             String fechaEmision = xmlComprobante.getElementsByTagName("fechaEmision").item(0).getTextContent();
             String direccionProveedor = "";
@@ -554,19 +596,16 @@ public class JasperRide {
             }
             data.add(guia);
         }
-        try {
-            InputStream inputStream = new FileInputStream(new File(dirPlantilla));
-            JasperDesign jasperDesign = JRXmlLoader.load(inputStream);
-            JasperReport jasperReport = JasperCompileManager.compileReport(jasperDesign);
-            HashMap parameters = new HashMap();
-            parameters.put("DIR_PLANTILLAS", dirPlantillas);
-            JRBeanCollectionDataSource beanColDataSource = new JRBeanCollectionDataSource(data);
-            JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, beanColDataSource);
-            JasperExportManager.exportReportToPdfFile(jasperPrint, dirGuardarDoc);
 
-        } catch (Exception ex) {
-            System.out.println(ex.getMessage());
-        }
+        InputStream inputStream = new FileInputStream(new File(dirPlantilla));
+        JasperDesign jasperDesign = JRXmlLoader.load(inputStream);
+        JasperReport jasperReport = JasperCompileManager.compileReport(jasperDesign);
+        HashMap parameters = new HashMap();
+        parameters.put("DIR_PLANTILLAS", dirPlantillas);
+        JRBeanCollectionDataSource beanColDataSource = new JRBeanCollectionDataSource(data);
+        JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, beanColDataSource);
+        JasperExportManager.exportReportToPdfFile(jasperPrint, dirGuardarDoc);
+
     }
 
     private String dirPlantillaJasper(String ruc, String ireportDir) {
@@ -619,5 +658,9 @@ public class JasperRide {
 
     private String impuestoRetencion(String codigo) {
         return codigo.equals("1") ? "RENTA" : (codigo.equals("2") ? "IVA" : "ISD");
+    }
+
+    private static String formatDouble(double num) {
+        return String.format("%.2f", num).replace(",", ".");
     }
 }

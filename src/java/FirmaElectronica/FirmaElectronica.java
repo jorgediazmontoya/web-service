@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.Enumeration;
 import java.util.Random;
 import java.util.Properties;
 import javax.xml.parsers.DocumentBuilder;
@@ -52,6 +53,7 @@ public class FirmaElectronica {
     private String direccionCertificado;
     private String passwordCertificado;
     private String dirCarpetaAutorizados;
+    private KeyStore ks;
 
     /**
      * @return the direccionCertificado
@@ -93,6 +95,20 @@ public class FirmaElectronica {
      */
     public void setDirCarpetaAutorizados(String dirCarpetaAutorizados) {
         this.dirCarpetaAutorizados = dirCarpetaAutorizados;
+    }
+
+    /**
+     * @return the ks
+     */
+    public KeyStore getKs() {
+        return ks;
+    }
+
+    /**
+     * @param ks the ks to set
+     */
+    public void setKs(KeyStore ks) {
+        this.ks = ks;
     }
 
     enum TipoError {
@@ -147,7 +163,7 @@ public class FirmaElectronica {
         try {
             dataToSign = createDataToSign(xmlComprobante);
         } catch (Exception e) {
-            respuestaInterna.addMensaje(new MensajeGenerado("1000", "ERROR PROCESANDO EL XML A FIRMAR" +e.getMessage(), null, TipoError.EXCEPCION.toString()));
+            respuestaInterna.addMensaje(new MensajeGenerado("1000", "ERROR PROCESANDO EL XML A FIRMAR" + e.getMessage(), null, TipoError.EXCEPCION.toString()));
 
             return respuestaInterna;
         }
@@ -170,20 +186,25 @@ public class FirmaElectronica {
     }
 
     private IPKStoreManager getPKStoreManager() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
-        KeyStore ks = KeyStore.getInstance("PKCS12");
+        ks = KeyStore.getInstance("PKCS12");
         FileInputStream fis = new java.io.FileInputStream(getDireccionCertificado());
         ks.load(fis, getPasswordCertificado().toCharArray());
         IPKStoreManager storeManager = new KSStore(ks, new PassStoreKS(getPasswordCertificado()));
         return storeManager;
     }
 
-    private X509Certificate getFirstCertificate(final IPKStoreManager storeManager) throws CertStoreException {
-
+    private X509Certificate getFirstCertificate(final IPKStoreManager storeManager) throws CertStoreException, KeyStoreException {
+        Enumeration nombres = ks.aliases();
+        while (nombres.hasMoreElements()) {
+            String aliasKey = (String) nombres.nextElement();
+            if (aliasKey.toLowerCase().contains("signing key")) {
+                return (X509Certificate) ks.getCertificate(aliasKey);
+            }
+        }
         List<X509Certificate> certs = storeManager.getSignCertificates();
         if ((certs == null) || (certs.isEmpty())) {
             return null;
         }
-
         return certs.get(0);
     }
 
@@ -208,7 +229,7 @@ public class FirmaElectronica {
         Random rnd = new Random();
         int sufijo = (int) (rnd.nextDouble() * 100.0D);
         String nombreArchivoTemp = "temp" + Integer.toString(sufijo) + ".xml";
-        Path dir = new File(this.dirCarpetaAutorizados).toPath().resolve(nombreArchivoTemp);
+        Path dir = new File(this.getDirCarpetaAutorizados()).toPath().resolve(nombreArchivoTemp);
         File temp = new File(dir.toString());
         Result result = new StreamResult(temp);
         Transformer transformer = TransformerFactory.newInstance().newTransformer();

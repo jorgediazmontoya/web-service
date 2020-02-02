@@ -28,8 +28,9 @@ public class Factura extends ComprobanteGeneral {
     private String totalSinImpuestos;
     private String totalDescuento;
     private String propina;
+    private String direccionComprador;
     private List<TotalImpuesto> totalConImpuesto;
-
+    private String totalSubsidio;
     private String importeTotal;
     private String moneda;
     private List<DetalleFactura> detalles;
@@ -80,15 +81,27 @@ public class Factura extends ComprobanteGeneral {
         tagRazonSocialComprador.setTextContent(getRazonSocialComprador());
         tagInfoFactura.appendChild(tagRazonSocialComprador);
 
-        if (identificacionComprador != null && !identificacionComprador.equals("")) {
+        if (getIdentificacionComprador() != null && !identificacionComprador.equals("")) {
             Element tagIdentificacionComprador = xmlComprobante.createElement("identificacionComprador");
             tagIdentificacionComprador.setTextContent(getIdentificacionComprador());
             tagInfoFactura.appendChild(tagIdentificacionComprador);
         }
 
+        if (getDireccionComprador() != null && !direccionComprador.equals("")) {
+            Element tagDireccionComprador = xmlComprobante.createElement("direccionComprador");
+            tagDireccionComprador.setTextContent(getDireccionComprador());
+            tagInfoFactura.appendChild(tagDireccionComprador);
+        }
+
         Element tagTotalSinImpuestos = xmlComprobante.createElement("totalSinImpuestos");
         tagTotalSinImpuestos.setTextContent(getTotalSinImpuestos());
         tagInfoFactura.appendChild(tagTotalSinImpuestos);
+
+        if (getTotalSubsidio() != null && !totalSubsidio.equals("")) {
+            Element tagTotalSubsidio = xmlComprobante.createElement("totalSubsidio");
+            tagTotalSubsidio.setTextContent(getTotalSubsidio());
+            tagInfoFactura.appendChild(tagTotalSubsidio);
+        }
 
         if (getTotalDescuento() != null && !totalDescuento.equals("")) {
             Element tagTotalDescuento = xmlComprobante.createElement("totalDescuento");
@@ -97,33 +110,32 @@ public class Factura extends ComprobanteGeneral {
         }
         tagInfoFactura.appendChild(util.construirXMLTotalConImpuestos(getTotalConImpuesto(), xmlComprobante));
 
-        if (propina != null && !propina.equals("")) {
+        if (getPropina() != null && !propina.equals("")) {
             Element tagPropina = xmlComprobante.createElement("propina");
-            tagPropina.setTextContent(propina);
+            tagPropina.setTextContent(getPropina());
             tagInfoFactura.appendChild(tagPropina);
         }
 
         Element tagImporteTotal = xmlComprobante.createElement("importeTotal");
-        tagImporteTotal.setTextContent(importeTotal);
+        tagImporteTotal.setTextContent(getImporteTotal());
         tagInfoFactura.appendChild(tagImporteTotal);
 
-        if (moneda != null && !moneda.equals("")) {
+        if (getMoneda() != null && !moneda.equals("")) {
             Element tagMoneda = xmlComprobante.createElement("moneda");
-            tagMoneda.setTextContent(moneda);
+            tagMoneda.setTextContent(getMoneda());
             tagInfoFactura.appendChild(tagMoneda);
         }
         tagInfoFactura.appendChild(util.construirXMLPagos(getPagos(), xmlComprobante));
         tagFactura.appendChild(tagInfoFactura);
 
-        tagFactura.appendChild(util.construirXMLDetallesFactura(detalles, xmlComprobante));
-        if (infoAdicional != null && !infoAdicional.isEmpty() && infoAdicional.get(0) != null) {
-            tagFactura.appendChild(util.construirXMLInfoAdicional(infoAdicional, xmlComprobante));
+        tagFactura.appendChild(util.construirXMLDetallesFactura(getDetalles(), xmlComprobante));
+        if (getInfoAdicional() != null && !infoAdicional.isEmpty() && getInfoAdicional().get(0) != null) {
+            tagFactura.appendChild(util.construirXMLInfoAdicional(getInfoAdicional(), xmlComprobante));
         }
 
         return xmlComprobante;
     }
 
-    
     /**
      * @return the guiaRemision
      */
@@ -304,6 +316,34 @@ public class Factura extends ComprobanteGeneral {
      */
     public void setPagos(List<Pago> pagos) {
         this.pagos = pagos;
+    }
+
+    /**
+     * @return the totalSubsidio
+     */
+    public String getTotalSubsidio() {
+        return totalSubsidio;
+    }
+
+    /**
+     * @param totalSubsidio the totalSubsidio to set
+     */
+    public void setTotalSubsidio(String totalSubsidio) {
+        this.totalSubsidio = totalSubsidio;
+    }
+
+    /**
+     * @return the direccionComprador
+     */
+    public String getDireccionComprador() {
+        return direccionComprador;
+    }
+
+    /**
+     * @param direccionComprador the direccionComprador to set
+     */
+    public void setDireccionComprador(String direccionComprador) {
+        this.direccionComprador = direccionComprador;
     }
 
 }

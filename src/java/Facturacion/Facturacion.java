@@ -339,7 +339,7 @@ public class Facturacion {
                 MensajeGenerado mensaje = new MensajeGenerado();
                 mensaje.setTipo("PROCESANDOSE");
                 mensaje.setIdentificador("3000");
-                mensaje.setMensaje("EL COMPROBANTE SE ENCUENTRA SIENDO PROCESADO POR EL SRI. ENVIAR NUEVAMENTE EN UNOS 2 MIN. RESPUESTA DEL SISTEMA");
+                mensaje.setMensaje("EL COMPROBANTE SE ENCUENTRA EN PROCESO, NO HA SIDO AUTORIZADO POR EL SRI O NUNCA SE HA ENVIADO");
                 respuestaInterna.getMensajes().add(mensaje);
                 return respuestaInterna;
             }
@@ -368,11 +368,12 @@ public class Facturacion {
                 respuestaInterna.setNumeroAutorizacion(autorizacion.getNumeroAutorizacion());
             }
             // tener en cuanta el formato de la fecha
-
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss");
-            GregorianCalendar gc = autorizacion.getFechaAutorizacion().toGregorianCalendar();
-            String formatted_string = sdf.format(gc.getTime());
-            respuestaInterna.setFechaAutorizacion(formatted_string);
+            if (autorizacion.getFechaAutorizacion() != null) {
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss");
+                GregorianCalendar gc = autorizacion.getFechaAutorizacion().toGregorianCalendar();
+                String formatted_string = sdf.format(gc.getTime());
+                respuestaInterna.setFechaAutorizacion(formatted_string);
+            }
             respuestaInterna.setDocAutorizado(autorizacion.getComprobante());
             List<SRI.Autorizacion.Mensaje> mensajes = autorizacion.getMensajes().getMensaje();
             if (mensajes != null) {
@@ -382,7 +383,9 @@ public class Facturacion {
                     respuestaInterna.addMensaje(new MensajeGenerado(mensaje.getIdentificador(), mensaje.getMensaje(), mensaje.getInformacionAdicional(), mensaje.getTipo()));
                 }
             }
-            respuestaInterna.setComprobante(util.convertirStringToXML(autorizacion.getComprobante()));
+            if (autorizacion.getComprobante() != null) {
+                respuestaInterna.setComprobante(util.convertirStringToXML(autorizacion.getComprobante()));
+            }
         } catch (Exception e) {
             return CrearRespuestaException("ERROR CREANDO EL XML DE RESPUESTA DE AUTORIZACION");
         }

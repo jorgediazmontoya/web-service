@@ -19,14 +19,19 @@ public class Factura extends ComprobanteGeneral {
     private String identificacionComprador;
     private String propina;
     private String importeTotal;
+    private String direccionComprador;
     private List<DetalleFactura> detalles;
     private List<CampoAdicional> infoAdicional;
     private List<Pago> pagos;
+    private List<ReembolsoFactura> reembolso;
+    private String totalSinSubsidio;
+    private String ahorroSubsidio;
 
     public Factura() {
         detalles = new ArrayList();
         infoAdicional = new ArrayList();
         pagos = new ArrayList();
+        reembolso = new ArrayList();
     }
 
     /**
@@ -71,7 +76,6 @@ public class Factura extends ComprobanteGeneral {
         this.identificacionComprador = identificacionComprador;
     }
 
-   
     /**
      * @return the propina
      */
@@ -140,6 +144,62 @@ public class Factura extends ComprobanteGeneral {
      */
     public void setPagos(List<Pago> pagos) {
         this.pagos = pagos;
+    }
+
+    /**
+     * @return the reembolso
+     */
+    public List<ReembolsoFactura> getReembolso() {
+        return reembolso;
+    }
+
+    /**
+     * @param reembolso the reembolso to set
+     */
+    public void setReembolso(List<ReembolsoFactura> reembolso) {
+        this.reembolso = reembolso;
+    }
+
+    /**
+     * @return the direccionComprador
+     */
+    public String getDireccionComprador() {
+        return direccionComprador;
+    }
+
+    /**
+     * @param direccionComprador the direccionComprador to set
+     */
+    public void setDireccionComprador(String direccionComprador) {
+        this.direccionComprador = direccionComprador;
+    }
+
+    /**
+     * @return the totalSinSubsidio
+     */
+    public String getTotalSinSubsidio() {
+        return totalSinSubsidio;
+    }
+
+    /**
+     * @param totalSinSubsidio the totalSinSubsidio to set
+     */
+    public void setTotalSinSubsidio(String totalSinSubsidio) {
+        this.totalSinSubsidio = totalSinSubsidio;
+    }
+
+    /**
+     * @return the ahorroSubsidio
+     */
+    public String getAhorroSubsidio() {
+        return ahorroSubsidio;
+    }
+
+    /**
+     * @param ahorroSubsidio the ahorroSubsidio to set
+     */
+    public void setAhorroSubsidio(String ahorroSubsidio) {
+        this.ahorroSubsidio = ahorroSubsidio;
     }
 
 }

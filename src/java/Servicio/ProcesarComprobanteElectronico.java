@@ -14,6 +14,7 @@ import JasperRide.JasperRide;
 import Respuesta.MensajeGenerado;
 import Respuesta.Respuesta;
 import Respuesta.RespuestaComprobanteLote;
+import Respuesta.RespuestaComprobanteConsultado;
 import Respuesta.RespuestaInterna;
 import Ride.Ride;
 import SRI.Autorizacion.Autorizacion;
@@ -141,164 +142,93 @@ public class ProcesarComprobanteElectronico {
         return respuesta;
     }
 
-    @WebMethod(operationName = "procesarComprobanteLote")
-    public RespuestaComprobanteLote procesarComprobanteLotes(@WebParam(name = "comprobanteLote") ComprobanteLote comprobanteLote) {
+    @WebMethod(operationName = "procesarXML")
+    public Respuesta procesarXML(@WebParam(name = "xml") String xml, @WebParam(name = "configAplicacion") ConfigAplicacion configAplicacion, @WebParam(name = "configCorreo") ConfigCorreo configCorreo) {
+
         Util util = new Util();
-        ConfigAplicacion configAplicacion = comprobanteLote.getConfigAplicacion();
-        ConfigCorreo configCorreo = comprobanteLote.getConfigCorreo();
-
         RespuestaInterna respuestaInterna = new RespuestaInterna();
-        RespuestaComprobanteLote respuestaLote = new RespuestaComprobanteLote();
-
+        Respuesta respuesta = new Respuesta();
         Facturacion facturacion = new Facturacion();
-        facturacion.setAmbiente(comprobanteLote.getAmbiente());
-        try {
-            respuestaInterna = comprobanteLote.crearXMLComprobante();
-        } catch (Exception e) {
-            respuestaLote.setError(true);
-            respuestaLote.setMensajeGeneral(new MensajeGenerado("1000", "ERROR CREANDO EL XML DEL DOCUMENTO RECIBIDO", null, "EXCEPCION"));
 
-            return respuestaLote;
+        Document xmlComprobante = null;
+
+        try {
+            xmlComprobante = util.convertirStringToXML(xml);
+            respuesta.setClaveAcceso(xmlComprobante.getElementsByTagName("claveAcceso").item(0).getTextContent());
+            facturacion.setAmbiente(xmlComprobante.getElementsByTagName("ambiente").item(0).getTextContent());
+        } catch (Exception e) {
+            respuesta.setEstadoComprobante("ERROR");
+            respuesta.addMensaje(new MensajeGenerado("1000", "ERROR CONVIRTIENDO EL STRING XML A Document", null, "EXCEPCION"));
+
+            return respuesta;
+        }
+
+        try {
+            respuestaInterna = facturacion.ProcesarComprobante(xmlComprobante, configAplicacion, true);
+        } catch (Exception e) {
+            respuesta.setEstadoComprobante("ERROR");
+            respuesta.addMensaje(new MensajeGenerado("1000", "ERROR PROCESANDO EL XML DEL COMPROBANTE ELECTRONICO", null, "EXCEPCION"));
+
+            return respuesta;
         }
         if (respuestaInterna.getEstadoComprobante().equals("ERROR")) {
-            respuestaLote.setError(true);
-            respuestaLote.setMensajeGeneral(respuestaInterna.getMensajes().get(0));
-            return respuestaLote;
+
         }
-        try {
-            respuestaInterna = facturacion.ProcesarComprobanteLote(respuestaInterna.getComprobante());
-        } catch (Exception e) {
-            respuestaLote.setError(true);
-            respuestaLote.setMensajeGeneral(new MensajeGenerado("1000", "ERROR PROCESANDO XML LOTE", null, "EXCEPCION"));
-
-            return respuestaLote;
-        }
-
-        if (respuestaInterna.getEstadoComprobante() != null && respuestaInterna.getEstadoComprobante().equals("ERROR")) {
-            respuestaLote.setError(true);
-            respuestaLote.setMensajeGeneral(respuestaInterna.getMensajes().get(0));
-            return respuestaLote;
-        }
-
-        respuestaLote.setError(false);
-        if (respuestaInterna.getRespuestaRecepcion() != null) {
-            List<Comprobante> comprobantesDevueltos = respuestaInterna.getRespuestaRecepcion().getComprobantes().getComprobante();
-            int numeroComprobantesDevueltos = comprobantesDevueltos.size();
-            for (int i = 0; i < numeroComprobantesDevueltos; i++) {
-                Respuesta respuesta = new Respuesta();
-
-                respuesta.setEstadoComprobante("DEVUELTA");
-
-                List<SRI.Recepcion.Mensaje> mensajes = comprobantesDevueltos.get(i).getMensajes().getMensaje();
-                int cantMensaje = mensajes.size();
-                for (int j = 0; j < cantMensaje; j++) {
-                    MensajeGenerado mensajeGenerado = new MensajeGenerado();
-                    mensajeGenerado.setIdentificador(mensajes.get(j).getIdentificador());
-                    mensajeGenerado.setMensaje(mensajes.get(j).getMensaje());
-                    mensajeGenerado.setInformacionAdicional(mensajes.get(j).getInformacionAdicional());
-                    mensajeGenerado.setTipo(mensajes.get(j).getTipo());
-                    respuesta.getMensajes().add(mensajeGenerado);
+        respuesta.setEstadoComprobante(respuestaInterna.getEstadoComprobante());
+        respuesta.setNumeroAutorizacion(respuestaInterna.getNumeroAutorizacion());
+        respuesta.setFechaAutorizacion(respuestaInterna.getFechaAutorizacion());
+        respuesta.setMensajes(respuestaInterna.getMensajes());
+        if (respuestaInterna.getEstadoComprobante().equals("AUTORIZADO")) {
+            String directorioRaiz = configAplicacion.getDirAutorizados();
+            String nombreFichero = "", dirGuardarDoc = "";
+            try {
+                xmlComprobante = respuestaInterna.getComprobante();
+                directorioRaiz = Paths.get(directorioRaiz).resolve(crearNombreCarpeta(xmlComprobante)).toString();
+                File directorio = new File(directorioRaiz);
+                if (!directorio.exists()) {
+                    directorio.mkdir();
                 }
+                nombreFichero = crearNombreFichero(xmlComprobante);
+                dirGuardarDoc = Paths.get(directorioRaiz).resolve(nombreFichero).toString();
 
-                respuesta.setClaveAcceso(comprobantesDevueltos.get(i).getClaveAcceso());
-                respuesta.setComprobanteID(comprobantesDevueltos.get(i).getClaveAcceso().substring(24, 39));
-                respuestaLote.getRespuestas().add(respuesta);
+                Source source = new DOMSource(respuestaInterna.getComprobante());
+                Result result = new StreamResult(new File(dirGuardarDoc));
+                Transformer transformer = TransformerFactory.newInstance().newTransformer();
+                transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+                transformer.transform(source, result);
+            } catch (Exception e) {
+                respuesta.addMensaje(new MensajeGenerado("1000", "ERROR GUARDANDO EL XML AUTORIZADO", null, "WARNING"));
             }
-        }
-        if (respuestaInterna.getRespuestaLote() != null) {
-            respuestaLote.setClaveAccesoConsultada(respuestaInterna.getRespuestaLote().getClaveAccesoLoteConsultada());
-            int numeroComprobantesLote = Integer.parseInt(respuestaInterna.getRespuestaLote().getNumeroComprobantesLote());
-            List<Autorizacion> autorizaciones = respuestaInterna.getRespuestaLote().getAutorizaciones().getAutorizacion();
-            for (int i = 0; i < numeroComprobantesLote; i++) {
-                Respuesta respuesta = new Respuesta();
+            try {
+                JasperRide jasperRide = new JasperRide();
+                String numAutorizacion = respuestaInterna.getComprobante().getElementsByTagName("claveAcceso").item(0).getTextContent();
+                jasperRide.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo(), "D:\\Desarrollos\\IReport");
+            } catch (Exception e) {
+                respuesta.addMensaje(new MensajeGenerado("1000", "ERROR GUARDANDO EL PDF AUTORIZADO", null, "WARNING"));
+            }
+            try {
+                JCMail jcmail = new JCMail();
+                jcmail.setHost(configCorreo.getCorreoHost());
+                jcmail.setPort(configCorreo.getCorreoPort());
+                jcmail.setFrom(configCorreo.getCorreoRemitente());
+                jcmail.setPassword(configCorreo.getCorreoPass().toCharArray());
+                jcmail.setSubject(configCorreo.getCorreoAsunto());
 
-                respuesta.setEstadoComprobante(autorizaciones.get(i).getEstado());
-                respuesta.setNumeroAutorizacion(autorizaciones.get(i).getNumeroAutorizacion());
-                respuesta.setClaveAcceso(autorizaciones.get(i).getNumeroAutorizacion());
-                List<Mensaje> mensajes = autorizaciones.get(i).getMensajes().getMensaje();
-                int cantMensaje = mensajes.size();
-                for (int j = 0; j < cantMensaje; j++) {
-                    MensajeGenerado mensajeGenerado = new MensajeGenerado();
-                    mensajeGenerado.setIdentificador(mensajes.get(j).getIdentificador());
-                    mensajeGenerado.setMensaje(mensajes.get(j).getMensaje());
-                    mensajeGenerado.setInformacionAdicional(mensajes.get(j).getInformacionAdicional());
-                    mensajeGenerado.setTipo(mensajes.get(j).getTipo());
-                    respuesta.getMensajes().add(mensajeGenerado);
+                String destinatarios = obtenerDestinatarios(xmlComprobante);
+                jcmail.setToBBC(configCorreo.getBBC());
+                jcmail.setToCC(configCorreo.getCC());
+                if (!destinatarios.equals("")) {
+                    jcmail.setMessage(crearMensajeCorreo(xmlComprobante));
+                    jcmail.setTo(destinatarios);
+                    jcmail.SEND(nombreFichero, dirGuardarDoc, configCorreo.isSslHabilitado());
                 }
-                Document xmlComprobante = null;
-                try {
-                    xmlComprobante = util.convertirStringToXML(autorizaciones.get(i).getComprobante());
-
-                    respuesta.setComprobanteID(xmlComprobante.getElementsByTagName("claveAcceso").item(0).getTextContent().substring(24, 39));
-
-                    if (respuesta.getEstadoComprobante().equals("AUTORIZADO")) {
-                        RespuestaInterna respuestaAutorizacionLote = null;
-                        try {
-                            respuestaAutorizacionLote = facturacion.CrearRespuestaAutorizacionLote(autorizaciones.get(i));
-
-                            String ruc = xmlComprobante.getElementsByTagName("ruc").item(0).getTextContent();
-                            String directorioRaiz = configAplicacion.getDirAutorizados();
-                            String nombreFichero = "", dirGuardarDoc = "";
-                            try {
-                                directorioRaiz = Paths.get(directorioRaiz).resolve(crearNombreCarpeta(xmlComprobante)).toString();
-                                File directorio = new File(directorioRaiz);
-                                if (!directorio.exists()) {
-                                    directorio.mkdir();
-                                }
-                                nombreFichero = crearNombreFichero(xmlComprobante);
-                                dirGuardarDoc = Paths.get(directorioRaiz).resolve(crearNombreFichero(xmlComprobante)).toString();
-
-                                Source source = new DOMSource(respuestaAutorizacionLote.getComprobante());
-                                Result result = new StreamResult(new File(dirGuardarDoc));
-                                Transformer transformer = TransformerFactory.newInstance().newTransformer();
-                                transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-                                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-                                transformer.transform(source, result);
-                            } catch (Exception e) {
-                                respuesta.addMensaje(new MensajeGenerado("1000", "ERROR GUARDANDO EL XML AUTORIZADO", null, "WARNING"));
-                            }
-                            try {
-                                //Ride ride = new Ride();
-                                String numAutorizacion = respuestaAutorizacionLote.getComprobante().getElementsByTagName("numeroAutorizacion").item(0).getTextContent();
-                                //ride.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo());
-                                JasperRide jasperRide = new JasperRide();
-                                jasperRide.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo(), "D:\\Desarrollos\\IReport");
-                            } catch (Exception e) {
-                                respuesta.addMensaje(new MensajeGenerado("1000", "ERROR GUARDANDO EL PDF AUTORIZADO", null, "WARNING"));
-                            }
-                            try {
-                                JCMail jcmail = new JCMail();
-                                jcmail.setHost(configCorreo.getCorreoHost());
-                                jcmail.setPort(configCorreo.getCorreoPort());
-                                jcmail.setFrom(configCorreo.getCorreoRemitente());
-                                jcmail.setPassword(configCorreo.getCorreoPass().toCharArray());
-                                jcmail.setSubject(configCorreo.getCorreoAsunto());
-
-                                String destinatarios = obtenerDestinatarios(xmlComprobante);
-                                jcmail.setToBBC(configCorreo.getBBC());
-                                jcmail.setToCC(configCorreo.getCC());
-                                if (!destinatarios.equals("")) {
-                                    jcmail.setMessage(crearMensajeCorreo(xmlComprobante));
-                                    jcmail.setTo(destinatarios);
-                                    jcmail.SEND(nombreFichero, dirGuardarDoc, configCorreo.isSslHabilitado());
-                                }
-                            } catch (Exception e) {
-                                respuesta.addMensaje(new MensajeGenerado("1000", "ERROR ENVIANDO EL CORREO AL CLIENTE", null, "WARNING"));
-                            }
-                        } catch (Exception e) {
-                            respuesta.addMensaje(new MensajeGenerado("1000", "ERROR CREANDO RESPUESTA DE AUTORIZACION", null, "EXCEPTION"));
-                        }
-
-                    }
-                } catch (Exception e) {
-                    respuesta.addMensaje(new MensajeGenerado("1000", "ERROR CONVIRTIENDO A STRING EL XML PROCESADO POR EL SRI", null, "EXCEPTION"));
-                }
-                respuestaLote.getRespuestas().add(respuesta);
+            } catch (Exception e) {
+                respuesta.addMensaje(new MensajeGenerado("1000", "ERROR ENVIANDO EL CORREO AL CLIENTE", e.getMessage(), "WARNING"));
             }
         }
 
-        return respuestaLote;
-
+        return respuesta;
     }
 
     @WebMethod(operationName = "procesarComprobantePendiente")
@@ -392,6 +322,21 @@ public class ProcesarComprobanteElectronico {
             respuesta.addMensaje(new MensajeGenerado("1000", "ERROR CREANDO EL XML DEL DOCUMENTO RECIBIDO", null, "EXCEPCION"));
         }
         return respuesta;
+    }
+
+    @WebMethod(operationName = "obtenerComprobante")
+    public RespuestaComprobanteConsultado obtenerComprobante(@WebParam(name = "claveAcceso") String claveAcceso, @WebParam(name = "ambiente") String ambiente) {
+        Facturacion facturacion = new Facturacion();
+        RespuestaComprobanteConsultado respuesta = new RespuestaComprobanteConsultado();
+        facturacion.setAmbiente(ambiente);
+        RespuestaInterna respuestaInterna = facturacion.procesarComprobantesPendientesAutorizacion(claveAcceso);
+        respuesta.setEstadoComprobante(respuestaInterna.getEstadoComprobante());
+        respuesta.setFechaAutorizacion(respuestaInterna.getFechaAutorizacion());
+        respuesta.setClaveAcceso(claveAcceso);
+        respuesta.setMensajes(respuestaInterna.getMensajes());
+        respuesta.setComprobante(respuestaInterna.getDocAutorizado());
+        return respuesta;
+
     }
 
     private static String crearMensajeCorreo(Document xmlComprobante) {

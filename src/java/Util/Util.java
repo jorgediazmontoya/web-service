@@ -243,6 +243,12 @@ public class Util {
             tagPrecioUnitario.setTextContent(detalle.getPrecioUnitario());
             tagDetalle.appendChild(tagPrecioUnitario);
 
+            if (detalle.getPrecioSinSubsidio() != null && !detalle.getPrecioSinSubsidio().equals("")) {
+                Element tagPrecioSinSubsidio = object.createElement("precioSinSubsidio");
+                tagPrecioSinSubsidio.setTextContent(detalle.getPrecioSinSubsidio());
+                tagDetalle.appendChild(tagPrecioSinSubsidio);
+            }
+            
             if (detalle.getDescuento() != null && !detalle.getDescuento().equals("")) {
                 Element tagDescuento = object.createElement("descuento");
                 tagDescuento.setTextContent(detalle.getDescuento());

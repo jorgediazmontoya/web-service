@@ -19,6 +19,7 @@ public class DetalleFactura {
     private String descripcion;
     private String cantidad;
     private String precioUnitario;
+    private String precioSinSubsidio;
     private String descuento;
     private String precioTotalSinImpuesto;
     private List<DetalleAdicional> detalleAdicional;
@@ -149,6 +150,20 @@ public class DetalleFactura {
      */
     public void setImpuestos(List<Impuesto> impuestos) {
         this.impuestos = impuestos;
+    }
+
+    /**
+     * @return the precioSinSubsidio
+     */
+    public String getPrecioSinSubsidio() {
+        return precioSinSubsidio;
+    }
+
+    /**
+     * @param precioSinSubsidio the precioSinSubsidio to set
+     */
+    public void setPrecioSinSubsidio(String precioSinSubsidio) {
+        this.precioSinSubsidio = precioSinSubsidio;
     }
 
 }
