@@ -11,6 +11,7 @@ import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import Facturacion.Facturacion;
 import JasperRide.JasperRide;
+import JasperRide.JasperRideProforma;
 import Respuesta.MensajeGenerado;
 import Respuesta.Respuesta;
 import Respuesta.RespuestaComprobanteLote;
@@ -22,6 +23,7 @@ import SRI.Autorizacion.Mensaje;
 import SRI.Recepcion.Comprobante;
 
 import TiposComprobantes.*;
+import TiposComprobantes.Bloques.CampoAdicional;
 import Util.Util;
 import java.util.List;
 import java.io.File;
@@ -48,7 +50,7 @@ import java.util.Date;
  * @author Yoelvys
  */
 @WebService(serviceName = "ProcesarComprobanteElectronico")
-@XmlSeeAlso({Factura.class, LiquidacionCompra.class, GuiaRemision.class, ComprobanteRetencion.class, NotaDebito.class, NotaCredito.class, ComprobantePendiente.class, ConfigAplicacion.class, ConfigCorreo.class})
+@XmlSeeAlso({Factura.class, LiquidacionCompra.class, GuiaRemision.class, ComprobanteRetencion.class, NotaDebito.class, NotaCredito.class, ComprobantePendiente.class, ConfigAplicacion.class, ConfigCorreo.class, Proforma.class})
 public class ProcesarComprobanteElectronico {
 
     @WebMethod(operationName = "procesarComprobante")
@@ -337,6 +339,71 @@ public class ProcesarComprobanteElectronico {
         respuesta.setComprobante(respuestaInterna.getDocAutorizado());
         return respuesta;
 
+    }
+
+    @WebMethod(operationName = "procesarProforma")
+    public Respuesta procesarProforma(@WebParam(name = "proforma") Proforma proforma) {
+        Respuesta respuesta = new Respuesta();
+        String directorioRaiz = proforma.getDirProformas();
+        directorioRaiz = Paths.get(directorioRaiz).resolve(proforma.getIdentificacionComprador()).toString();
+        File directorio = new File(directorioRaiz);
+        if (!directorio.exists()) {
+            directorio.mkdir();
+        }
+        String nombreFichero = "PROFORMA-" + proforma.getNumero() + ".pdf";
+        String dirGuardarDoc = Paths.get(directorioRaiz).resolve(nombreFichero).toString();
+        try {
+            //Ride ride = new Ride();
+            JasperRideProforma jasperRideProforma = new JasperRideProforma();
+            jasperRideProforma.CrearRide(proforma, dirGuardarDoc, "D:\\Desarrollos\\IReport");
+            respuesta.setEstadoComprobante("CREADA");
+        } catch (Exception e) {
+            respuesta.setEstadoComprobante("ERROR");
+            respuesta.addMensaje(new MensajeGenerado("1000", "ERROR GUARDANDO EL PDF PROFORMA", e.getMessage(), "WARNING"));
+            return respuesta;
+        }
+        ConfigCorreo configCorreo = proforma.getConfigCorreo();
+        if (configCorreo != null && configCorreo.getCorreoHost() != null && !configCorreo.getCorreoHost().equals("")) {
+            try {
+                JCMail jcmail = new JCMail();
+                jcmail.setHost(configCorreo.getCorreoHost());
+                jcmail.setPort(configCorreo.getCorreoPort());
+                jcmail.setFrom(configCorreo.getCorreoRemitente());
+                jcmail.setPassword(configCorreo.getCorreoPass().toCharArray());
+                jcmail.setSubject(configCorreo.getCorreoAsunto());
+
+                String destinatarios = "";
+                List<CampoAdicional> campoAdicional = proforma.getInfoAdicional();
+                for (int i = 0; i < campoAdicional.size(); i++) {
+                    if (campoAdicional.get(i).getNombre().equals("Email")) {
+                        destinatarios = campoAdicional.get(i).getValor();
+                    }
+                }
+                jcmail.setToBBC(configCorreo.getBBC());
+                jcmail.setToCC(configCorreo.getCC());
+                if (!destinatarios.equals("")) {
+                    jcmail.setMessage(crearMensajeCorreoProforma(proforma.getRazonSocialComprador(), proforma.getRazonSocial(), proforma.getNumero(), proforma.getImporteTotal()));
+                    jcmail.setTo(destinatarios);
+                    jcmail.SEND(nombreFichero, dirGuardarDoc, configCorreo.isSslHabilitado());
+                }
+            } catch (Exception e) {
+                respuesta.addMensaje(new MensajeGenerado("1000", "ERROR ENVIANDO EL CORREO AL CLIENTE", e.getMessage(), "WARNING"));
+            }
+        }
+        return respuesta;
+    }
+
+    private static String crearMensajeCorreoProforma(String cliente, String razonSocialEmisor, String noProforma, String importeTotal) {
+        String mensaje = "Estimado(a),<br /><br /><strong>" + cliente + "</strong>";
+        mensaje += "<br /><br />Esta es una notificacion automática de una proforma emitida por <strong>" + razonSocialEmisor + "</strong><br /><br /> ";
+
+        mensaje += "<strong>Tipo de Comprobante: </strong>PROFORMA<br />";
+        mensaje += "<strong>Nro de Comprobante: </strong>" + noProforma + "<br />";
+        mensaje += "<strong>Valor Total: </strong>" + importeTotal + "<br /><br />";
+        mensaje += "Los detalles generales de la proforma pueden ser consultados en el archivo pdf adjunto en este correo.<br /><br />"
+                + "<strong>Atentamente,</strong><br /><br />"
+                + "         <strong>" + razonSocialEmisor + "</strong>";
+        return mensaje;
     }
 
     private static String crearMensajeCorreo(Document xmlComprobante) {
