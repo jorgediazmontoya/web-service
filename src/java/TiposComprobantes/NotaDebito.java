@@ -8,6 +8,7 @@ package TiposComprobantes;
 import TiposComprobantes.Bloques.CampoAdicional;
 import TiposComprobantes.Bloques.Impuesto;
 import TiposComprobantes.Bloques.Motivo;
+import TiposComprobantes.Bloques.Pago;
 import Util.Util;
 import java.util.List;
 import javax.xml.parsers.ParserConfigurationException;
@@ -32,6 +33,7 @@ public class NotaDebito extends ComprobanteGeneral {
     private String valorTotal;
     private List<Motivo> motivos;
     private List<CampoAdicional> infoAdicional;
+    private List<Pago> pagos;
 
     @Override
     public Document crearXMLComprobante() throws ParserConfigurationException {
@@ -58,11 +60,11 @@ public class NotaDebito extends ComprobanteGeneral {
         tagInfoNotaDebito.appendChild(tagTipoIdentificacionComprador);
 
         Element tagRazonSocialComprador = xmlComprobante.createElement("razonSocialComprador");
-        tagRazonSocialComprador.setTextContent(razonSocialComprador);
+        tagRazonSocialComprador.setTextContent(getRazonSocialComprador());
         tagInfoNotaDebito.appendChild(tagRazonSocialComprador);
 
         Element tagIdentificacionComprador = xmlComprobante.createElement("identificacionComprador");
-        tagIdentificacionComprador.setTextContent(identificacionComprador);
+        tagIdentificacionComprador.setTextContent(getIdentificacionComprador());
         tagInfoNotaDebito.appendChild(tagIdentificacionComprador);
 
         if (getContribuyenteEspecial() != null && !getContribuyenteEspecial().equals("")) {
@@ -76,38 +78,39 @@ public class NotaDebito extends ComprobanteGeneral {
         tagInfoNotaDebito.appendChild(tagObligadoContabilidad);
         if (getRise() != null && !getRise().equals("")) {
             Element tagRise = xmlComprobante.createElement("rise");
-            tagRise.setTextContent(rise);
+            tagRise.setTextContent(getRise());
             tagInfoNotaDebito.appendChild(tagRise);
         }
         Element tagCodDocModificado = xmlComprobante.createElement("codDocModificado");
-        tagCodDocModificado.setTextContent(codDocModificado);
+        tagCodDocModificado.setTextContent(getCodDocModificado());
         tagInfoNotaDebito.appendChild(tagCodDocModificado);
 
         Element tagNumDocModificado = xmlComprobante.createElement("numDocModificado");
-        tagNumDocModificado.setTextContent(numDocModificado);
+        tagNumDocModificado.setTextContent(getNumDocModificado());
         tagInfoNotaDebito.appendChild(tagNumDocModificado);
 
-        if (fechaEmisionDocSustento != null && !fechaEmisionDocSustento.equals("")) {
+        if (getFechaEmisionDocSustento() != null && !fechaEmisionDocSustento.equals("")) {
             Element tagFechaEmisionDocSustento = xmlComprobante.createElement("fechaEmisionDocSustento");
-            tagFechaEmisionDocSustento.setTextContent(fechaEmisionDocSustento);
+            tagFechaEmisionDocSustento.setTextContent(getFechaEmisionDocSustento());
             tagInfoNotaDebito.appendChild(tagFechaEmisionDocSustento);
         }
 
         Element tagTotalSinImpuestos = xmlComprobante.createElement("totalSinImpuestos");
-        tagTotalSinImpuestos.setTextContent(totalSinImpuestos);
+        tagTotalSinImpuestos.setTextContent(getTotalSinImpuestos());
         tagInfoNotaDebito.appendChild(tagTotalSinImpuestos);
 
-        tagInfoNotaDebito.appendChild(util.construirXMLImpuestos(impuestos, xmlComprobante));
+        tagInfoNotaDebito.appendChild(util.construirXMLImpuestos(getImpuestos(), xmlComprobante));
 
         Element tagValorTotal = xmlComprobante.createElement("valorTotal");
-        tagValorTotal.setTextContent(valorTotal);
+        tagValorTotal.setTextContent(getValorTotal());
         tagInfoNotaDebito.appendChild(tagValorTotal);
-
+        
+        tagNotaDebito.appendChild(util.construirXMLPagos(getPagos(), xmlComprobante));
         tagNotaDebito.appendChild(tagInfoNotaDebito);
 
         tagNotaDebito.appendChild(util.construirXMLMotivos(getMotivos(), xmlComprobante));
 
-        if (getInfoAdicional() != null && !infoAdicional.isEmpty() && infoAdicional.get(0) != null) {
+        if (getInfoAdicional() != null && !infoAdicional.isEmpty() && getInfoAdicional().get(0) != null) {
             tagNotaDebito.appendChild(util.construirXMLInfoAdicional(getInfoAdicional(), xmlComprobante));
         }
 
@@ -280,6 +283,20 @@ public class NotaDebito extends ComprobanteGeneral {
      */
     public void setValorTotal(String valorTotal) {
         this.valorTotal = valorTotal;
+    }
+
+    /**
+     * @return the pagos
+     */
+    public List<Pago> getPagos() {
+        return pagos;
+    }
+
+    /**
+     * @param pagos the pagos to set
+     */
+    public void setPagos(List<Pago> pagos) {
+        this.pagos = pagos;
     }
 
 }

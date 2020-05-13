@@ -5,6 +5,7 @@
  */
 package JasperRide;
 
+import JasperComprobantes.Destinatario;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -438,7 +439,21 @@ public class JasperRide {
                 nuevoCampoAdicional.setValor(valor);
                 notaDebito.getInfoAdicional().add(nuevoCampoAdicional);
             }
-
+            NodeList pago = xmlComprobante.getElementsByTagName("pago");
+            cantidad = pago.getLength();
+            for (int i = 0; i < cantidad; i++) {
+                org.w3c.dom.Element element = (org.w3c.dom.Element) pago.item(i);
+                JasperComprobantes.Pago nuevoPago = new JasperComprobantes.Pago();
+                nuevoPago.setFormaPago(formaDePago(element.getElementsByTagName("formaPago").item(0).getTextContent()));
+                nuevoPago.setTotal(element.getElementsByTagName("total").item(0).getTextContent());
+                if (element.getElementsByTagName("plazo").getLength() != 0) {
+                    nuevoPago.setPlazo(element.getElementsByTagName("plazo").item(0).getTextContent());
+                }
+                if (element.getElementsByTagName("unidadTiempo").getLength() != 0) {
+                    nuevoPago.setUnidadTiempo(element.getElementsByTagName("unidadTiempo").item(0).getTextContent());
+                }
+                notaDebito.getPagos().add(nuevoPago);
+            }
             NodeList detalles = xmlComprobante.getElementsByTagName("motivo");
             cantidad = detalles.getLength();
             for (int i = 0; i < cantidad; i++) {
@@ -544,32 +559,51 @@ public class JasperRide {
             guia.setFechaIniTransporte(fechaIniTransporte);
             guia.setFechaFinTransporte(fechaFinTransporte);
 
-            org.w3c.dom.Element destinatario = (org.w3c.dom.Element) xmlComprobante.getElementsByTagName("destinatario").item(0);
+            NodeList destinatarios = xmlComprobante.getElementsByTagName("destinatario");
+            int cantidadDestinatarios = destinatarios.getLength();
+            for (int i = 0; i < cantidadDestinatarios; i++) {
+                org.w3c.dom.Element destinatario = (org.w3c.dom.Element) destinatarios.item(i);
+                String docSustento = "FACTURA";
+                String numDocSustento = destinatario.getElementsByTagName("numDocSustento").getLength() > 0 ? destinatario.getElementsByTagName("numDocSustento").item(0).getTextContent() : null;
+                String fechaEmisionDocSustento = destinatario.getElementsByTagName("fechaEmisionDocSustento").getLength() > 0 ? destinatario.getElementsByTagName("fechaEmisionDocSustento").item(0).getTextContent() : null;
+                String numAutDocSustento = destinatario.getElementsByTagName("numAutDocSustento").getLength() > 0 ? destinatario.getElementsByTagName("numAutDocSustento").item(0).getTextContent() : null;
+                String motivoTraslado = destinatario.getElementsByTagName("motivoTraslado").item(0).getTextContent();
+                String dirDestinatario = destinatario.getElementsByTagName("dirDestinatario").item(0).getTextContent();
+                String identificacionDestinatario = destinatario.getElementsByTagName("identificacionDestinatario").item(0).getTextContent();
+                String razonSocialDestinatario = destinatario.getElementsByTagName("razonSocialDestinatario").item(0).getTextContent();
+                String docAduaneroUnico = destinatario.getElementsByTagName("docAduaneroUnico").getLength() > 0 ? destinatario.getElementsByTagName("docAduaneroUnico").item(0).getTextContent() : null;
+                String codEstabDestino = destinatario.getElementsByTagName("codEstabDestino").getLength() > 0 ? destinatario.getElementsByTagName("codEstabDestino").item(0).getTextContent() : null;
+                String ruta = destinatario.getElementsByTagName("ruta").getLength() > 0 ? destinatario.getElementsByTagName("ruta").item(0).getTextContent() : null;
 
-            String docSustento = "FACTURA";
-            String numDocSustento = destinatario.getElementsByTagName("numDocSustento").getLength() > 0 ? destinatario.getElementsByTagName("numDocSustento").item(0).getTextContent() : null;
-            String fechaEmisionDocSustento = destinatario.getElementsByTagName("fechaEmisionDocSustento").getLength() > 0 ? destinatario.getElementsByTagName("fechaEmisionDocSustento").item(0).getTextContent() : null;
-            String numAutDocSustento = destinatario.getElementsByTagName("numAutDocSustento").getLength() > 0 ? destinatario.getElementsByTagName("numAutDocSustento").item(0).getTextContent() : null;
-            String motivoTraslado = destinatario.getElementsByTagName("motivoTraslado").item(0).getTextContent();
-            String dirDestinatario = destinatario.getElementsByTagName("dirDestinatario").item(0).getTextContent();
-            String identificacionDestinatario = destinatario.getElementsByTagName("identificacionDestinatario").item(0).getTextContent();
-            String razonSocialDestinatario = destinatario.getElementsByTagName("razonSocialDestinatario").item(0).getTextContent();
-            String docAduaneroUnico = destinatario.getElementsByTagName("docAduaneroUnico").getLength() > 0 ? destinatario.getElementsByTagName("docAduaneroUnico").item(0).getTextContent() : null;
-            String codEstabDestino = destinatario.getElementsByTagName("codEstabDestino").getLength() > 0 ? destinatario.getElementsByTagName("codEstabDestino").item(0).getTextContent() : null;
-            String ruta = destinatario.getElementsByTagName("ruta").getLength() > 0 ? destinatario.getElementsByTagName("ruta").item(0).getTextContent() : null;
+                Destinatario destinatarioReport = new Destinatario();
+                destinatarioReport.setDocSustento(docSustento);
+                destinatarioReport.setNumDocSustento(numDocSustento);
+                destinatarioReport.setFechaEmisionDocSustento(fechaEmisionDocSustento);
+                destinatarioReport.setNumAutDocSustento(numAutDocSustento);
+                destinatarioReport.setMotivoTraslado(motivoTraslado);
+                destinatarioReport.setDirDestinatario(dirDestinatario);
+                destinatarioReport.setIdentificacionDestinatario(identificacionDestinatario);
+                destinatarioReport.setRazonSocialDestinatario(razonSocialDestinatario);
+                destinatarioReport.setDocAduaneroUnico(docAduaneroUnico);
+                destinatarioReport.setCodEstabDestino(codEstabDestino);
+                destinatarioReport.setRuta(ruta);
 
-            guia.setDocSustento(docSustento);
-            guia.setNumDocSustento(numDocSustento);
-            guia.setFechaEmisionDocSustento(fechaEmisionDocSustento);
-            guia.setNumAutDocSustento(numAutDocSustento);
-            guia.setMotivoTraslado(motivoTraslado);
-            guia.setDirDestinatario(dirDestinatario);
-            guia.setIdentificacionDestinatario(identificacionDestinatario);
-            guia.setRazonSocialDestinatario(razonSocialDestinatario);
-            guia.setDocAduaneroUnico(docAduaneroUnico);
-            guia.setCodEstabDestino(codEstabDestino);
-            guia.setRuta(ruta);
+                NodeList detalles = destinatario.getElementsByTagName("detalle");
+                int cantidadDetalles = detalles.getLength();
+                for (int j = 0; j < cantidadDetalles; j++) {
+                    org.w3c.dom.Element element = (org.w3c.dom.Element) detalles.item(j);
+                    JasperComprobantes.DetalleGuiaRemision nuevoDetalle = new JasperComprobantes.DetalleGuiaRemision();
+                    nuevoDetalle.setCodigoInterno(element.getElementsByTagName("codigoInterno").item(0).getTextContent());
+                    if (element.getElementsByTagName("codigoAdicional").getLength() != 0) {
+                        nuevoDetalle.setCodigoAdicional(element.getElementsByTagName("codigoAdicional").item(0).getTextContent());
+                    }
+                    nuevoDetalle.setCantidad(element.getElementsByTagName("cantidad").item(0).getTextContent());
+                    nuevoDetalle.setDescripcion(element.getElementsByTagName("descripcion").item(0).getTextContent());
+                    destinatarioReport.getDetalles().add(nuevoDetalle);
+                }
 
+                guia.getDestinatarios().add(destinatarioReport);
+            }
             NodeList campoAdicional = xmlComprobante.getElementsByTagName("campoAdicional");
             int cantidad = campoAdicional.getLength();
             for (int i = 0; i < cantidad; i++) {
@@ -581,19 +615,7 @@ public class JasperRide {
                 nuevoCampoAdicional.setValor(valor);
                 guia.getInfoAdicional().add(nuevoCampoAdicional);
             }
-            NodeList detalles = destinatario.getElementsByTagName("detalle");
-            cantidad = detalles.getLength();
-            for (int i = 0; i < cantidad; i++) {
-                org.w3c.dom.Element element = (org.w3c.dom.Element) detalles.item(i);
-                JasperComprobantes.DetalleGuiaRemision nuevoDetalle = new JasperComprobantes.DetalleGuiaRemision();
-                nuevoDetalle.setCodigoInterno(element.getElementsByTagName("codigoInterno").item(0).getTextContent());
-                if (element.getElementsByTagName("codigoAdicional").getLength() != 0) {
-                    nuevoDetalle.setCodigoAdicional(element.getElementsByTagName("codigoAdicional").item(0).getTextContent());
-                }
-                nuevoDetalle.setCantidad(element.getElementsByTagName("cantidad").item(0).getTextContent());
-                nuevoDetalle.setDescripcion(element.getElementsByTagName("descripcion").item(0).getTextContent());
-                guia.getDetalles().add(nuevoDetalle);
-            }
+
             data.add(guia);
         }
 
@@ -651,6 +673,8 @@ public class JasperRide {
             tipoComprobante = "GUÍA DE REMISIÓN";
         } else if (codDoc.equals("07")) {
             tipoComprobante = "COMPROBANTE DE RETENCIÓN";
+        }else if (codDoc.equals("03")) {
+            tipoComprobante = "LIQUIDACIÓN DE COMPRA DE BIENES Y PRESTACIÓN DE SERVICIOS";
         }
 
         return tipoComprobante;

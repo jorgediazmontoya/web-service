@@ -5,6 +5,7 @@
  */
 package Util;
 
+import TiposComprobantes.Bloques.ReembolsoFactura;
 import TiposComprobantes.Bloques.CampoAdicional;
 import TiposComprobantes.Bloques.Destinatario;
 import TiposComprobantes.Bloques.DetalleAdicional;
@@ -100,6 +101,38 @@ public class Util {
             tagTotalConImpuestos.appendChild(tagTotalImpuesto);
         }
         return tagTotalConImpuestos;
+
+    }
+
+    public Element construirXMLImpuestosReembolso(List<Impuesto> impuestos, Document object) {
+        Element tagImpuestos = object.createElement("detalleImpuestos");
+        for (Iterator<Impuesto> it = impuestos.iterator(); it.hasNext();) {
+            Element tagImpuesto = object.createElement("detalleImpuesto");
+            Impuesto impuesto = it.next();
+
+            Element tagCodigo = object.createElement("codigo");
+            tagCodigo.setTextContent(impuesto.getCodigo());
+            tagImpuesto.appendChild(tagCodigo);
+
+            Element tagCodigoPorcentaje = object.createElement("codigoPorcentaje");
+            tagCodigoPorcentaje.setTextContent(impuesto.getCodigoPorcentaje());
+            tagImpuesto.appendChild(tagCodigoPorcentaje);
+
+            Element tagTarifa = object.createElement("tarifa");
+            tagTarifa.setTextContent(impuesto.getTarifa());
+            tagImpuesto.appendChild(tagTarifa);
+
+            Element tagBaseImponible = object.createElement("baseImponibleReembolso");
+            tagBaseImponible.setTextContent(impuesto.getBaseImponible());
+            tagImpuesto.appendChild(tagBaseImponible);
+
+            Element tagValor = object.createElement("impuestoReembolso");
+            tagValor.setTextContent(impuesto.getValor());
+            tagImpuesto.appendChild(tagValor);
+
+            tagImpuestos.appendChild(tagImpuesto);
+        }
+        return tagImpuestos;
 
     }
 
@@ -215,6 +248,63 @@ public class Util {
 
     }
 
+    public Element construirXMLReembolsosFactura(List<ReembolsoFactura> reembolsos, Document object, String claveAcc) {
+        Element tagReembolsos = object.createElement("reembolsos");
+        for (Iterator<ReembolsoFactura> it = reembolsos.iterator(); it.hasNext();) {
+            Element tagReembolso = object.createElement("reembolsoDetalle");
+            ReembolsoFactura reembolso = it.next();
+
+            Element tagTipoIdentificacionProveedorReembolso = object.createElement("tipoIdentificacionProveedorReembolso");
+            tagTipoIdentificacionProveedorReembolso.setTextContent(reembolso.getTipoIdentificacionProveedorReembolso());
+            tagReembolso.appendChild(tagTipoIdentificacionProveedorReembolso);
+
+            Element tagIdentificacionProveedorReembolso = object.createElement("identificacionProveedorReembolso");
+            tagIdentificacionProveedorReembolso.setTextContent(reembolso.getIdentificacionProveedorReembolso());
+            tagReembolso.appendChild(tagIdentificacionProveedorReembolso);
+
+            Element tagCodPaisPagoProveedorReembolso = object.createElement("codPaisPagoProveedorReembolso");
+            tagCodPaisPagoProveedorReembolso.setTextContent(reembolso.getCodPaisPagoProveedorReembolso());
+            tagReembolso.appendChild(tagCodPaisPagoProveedorReembolso);
+
+            Element tagTipoProveedorReembolso = object.createElement("tipoProveedorReembolso");
+            tagTipoProveedorReembolso.setTextContent(reembolso.getTipoProveedorReembolso());
+            tagReembolso.appendChild(tagTipoProveedorReembolso);
+
+            Element tagCodDocReembolso = object.createElement("codDocReembolso");
+            tagCodDocReembolso.setTextContent(reembolso.getCodDocReembolso());
+            tagReembolso.appendChild(tagCodDocReembolso);
+
+            Element tagEstabDocReembolso = object.createElement("estabDocReembolso");
+            tagEstabDocReembolso.setTextContent(reembolso.getEstabDocReembolso());
+            tagReembolso.appendChild(tagEstabDocReembolso);
+
+            Element tagPtoEmiDocReembolso = object.createElement("ptoEmiDocReembolso");
+            tagPtoEmiDocReembolso.setTextContent(reembolso.getPtoEmiDocReembolso());
+            tagReembolso.appendChild(tagPtoEmiDocReembolso);
+
+            Element tagSecuencialDocReembolso = object.createElement("secuencialDocReembolso");
+            tagSecuencialDocReembolso.setTextContent(reembolso.getSecuencialDocReembolso());
+            tagReembolso.appendChild(tagSecuencialDocReembolso);
+
+            Element tagFechaEmisionDocReembolso = object.createElement("fechaEmisionDocReembolso");
+            tagFechaEmisionDocReembolso.setTextContent(reembolso.getFechaEmisionDocReembolso());
+            tagReembolso.appendChild(tagFechaEmisionDocReembolso);
+
+            String numAutorizacion = reembolso.getNumeroautorizacionDocReemb();
+            if (numAutorizacion == null || numAutorizacion.equals("")) {
+                numAutorizacion = claveAcc;
+            }
+            Element tagNumeroautorizacionDocReemb = object.createElement("numeroautorizacionDocReemb");
+            tagNumeroautorizacionDocReemb.setTextContent(numAutorizacion);
+            tagReembolso.appendChild(tagNumeroautorizacionDocReemb);
+
+            tagReembolso.appendChild(construirXMLImpuestosReembolso(reembolso.getImpuestos(), object));
+            tagReembolsos.appendChild(tagReembolso);
+        }
+
+        return tagReembolsos;
+    }
+
     public Element construirXMLDetallesFactura(List<DetalleFactura> detalles, Document object) {
         Element tagDetalles = object.createElement("detalles");
         for (Iterator<DetalleFactura> it = detalles.iterator(); it.hasNext();) {
@@ -248,7 +338,7 @@ public class Util {
                 tagPrecioSinSubsidio.setTextContent(detalle.getPrecioSinSubsidio());
                 tagDetalle.appendChild(tagPrecioSinSubsidio);
             }
-            
+
             if (detalle.getDescuento() != null && !detalle.getDescuento().equals("")) {
                 Element tagDescuento = object.createElement("descuento");
                 tagDescuento.setTextContent(detalle.getDescuento());

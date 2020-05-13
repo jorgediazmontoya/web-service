@@ -21,12 +21,13 @@ public class NotaDebito extends ComprobanteGeneral {
     private String comprobanteModificado;
     private String numDocModificado;
     private String fechaEmisionDocSustento;
-
     private String valorTotal;
+    private List<Pago> pagos;
     private List<Motivo> motivos;
     private List<CampoAdicional> infoAdicional;
 
     public NotaDebito() {
+        pagos = new ArrayList();
         motivos = new ArrayList();
         infoAdicional = new ArrayList();
     }
@@ -129,7 +130,6 @@ public class NotaDebito extends ComprobanteGeneral {
         this.fechaEmisionDocSustento = fechaEmisionDocSustento;
     }
 
-   
     /**
      * @return the motivos
      */
@@ -170,6 +170,20 @@ public class NotaDebito extends ComprobanteGeneral {
      */
     public void setValorTotal(String valorTotal) {
         this.valorTotal = valorTotal;
+    }
+
+    /**
+     * @return the pagos
+     */
+    public List<Pago> getPagos() {
+        return pagos;
+    }
+
+    /**
+     * @param pagos the pagos to set
+     */
+    public void setPagos(List<Pago> pagos) {
+        this.pagos = pagos;
     }
 
 }

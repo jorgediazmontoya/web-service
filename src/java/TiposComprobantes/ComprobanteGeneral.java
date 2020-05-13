@@ -102,7 +102,7 @@ public class ComprobanteGeneral {
         return xmlComprobante;
     }
 
-    private String claveAcceso() {
+    protected String claveAcceso() {
         String claveAcceso = fechaEmision.replaceAll("/", "");
         claveAcceso += codDoc;
         claveAcceso += ruc;
