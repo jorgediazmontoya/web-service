@@ -157,7 +157,7 @@ public class Factura extends ComprobanteGeneral {
         tagFactura.appendChild(util.construirXMLDetallesFactura(getDetalles(), xmlComprobante));
         
         if (getReembolsos() != null && !reembolsos.isEmpty() && getReembolsos().get(0) != null) {
-            tagFactura.appendChild(util.construirXMLReembolsosFactura(getReembolsos(), xmlComprobante, claveAcceso()));
+            tagFactura.appendChild(util.construirXMLReembolsosFactura(getReembolsos(), xmlComprobante));
         }
         if (getInfoAdicional() != null && !infoAdicional.isEmpty() && getInfoAdicional().get(0) != null) {
             tagFactura.appendChild(util.construirXMLInfoAdicional(getInfoAdicional(), xmlComprobante));

@@ -18,10 +18,9 @@ public class ReembolsoFactura {
     private String tipoDocumento;
     private String noDocumento;
     private String fechaEmisionDocReembolso;
-    private String impuesto;
-    private String porcentaje;
     private double baseImponible;
     private double valorImpuesto;
+    private double baseImponibleSinIva;
     private double total;  
 
     /**
@@ -79,35 +78,6 @@ public class ReembolsoFactura {
     public void setFechaEmisionDocReembolso(String fechaEmisionDocReembolso) {
         this.fechaEmisionDocReembolso = fechaEmisionDocReembolso;
     }
-
-    /**
-     * @return the impuesto
-     */
-    public String getImpuesto() {
-        return impuesto;
-    }
-
-    /**
-     * @param impuesto the impuesto to set
-     */
-    public void setImpuesto(String impuesto) {
-        this.impuesto = impuesto;
-    }
-
-    /**
-     * @return the porcentaje
-     */
-    public String getPorcentaje() {
-        return porcentaje;
-    }
-
-    /**
-     * @param porcentaje the porcentaje to set
-     */
-    public void setPorcentaje(String porcentaje) {
-        this.porcentaje = porcentaje;
-    }
-
     /**
      * @return the baseImponible
      */
@@ -148,6 +118,20 @@ public class ReembolsoFactura {
      */
     public void setTotal(double total) {
         this.total = total;
+    }
+
+    /**
+     * @return the baseImponibleSinIva
+     */
+    public double getBaseImponibleSinIva() {
+        return baseImponibleSinIva;
+    }
+
+    /**
+     * @param baseImponibleSinIva the baseImponibleSinIva to set
+     */
+    public void setBaseImponibleSinIva(double baseImponibleSinIva) {
+        this.baseImponibleSinIva = baseImponibleSinIva;
     }
 
    

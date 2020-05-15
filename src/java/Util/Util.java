@@ -248,7 +248,7 @@ public class Util {
 
     }
 
-    public Element construirXMLReembolsosFactura(List<ReembolsoFactura> reembolsos, Document object, String claveAcc) {
+    public Element construirXMLReembolsosFactura(List<ReembolsoFactura> reembolsos, Document object) {
         Element tagReembolsos = object.createElement("reembolsos");
         for (Iterator<ReembolsoFactura> it = reembolsos.iterator(); it.hasNext();) {
             Element tagReembolso = object.createElement("reembolsoDetalle");
@@ -291,9 +291,7 @@ public class Util {
             tagReembolso.appendChild(tagFechaEmisionDocReembolso);
 
             String numAutorizacion = reembolso.getNumeroautorizacionDocReemb();
-            if (numAutorizacion == null || numAutorizacion.equals("")) {
-                numAutorizacion = claveAcc;
-            }
+
             Element tagNumeroautorizacionDocReemb = object.createElement("numeroautorizacionDocReemb");
             tagNumeroautorizacionDocReemb.setTextContent(numAutorizacion);
             tagReembolso.appendChild(tagNumeroautorizacionDocReemb);

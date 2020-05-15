@@ -222,16 +222,26 @@ public class JasperRide {
                     reembolsoFactura.setNoDocumento(noDocumento);
                     reembolsoFactura.setFechaEmisionDocReembolso(element.getElementsByTagName("fechaEmisionDocReembolso").item(0).getTextContent());
 
-                    NodeList impuestos = element.getElementsByTagName("detalleImpuestos");
-                    org.w3c.dom.Element impuesto = (org.w3c.dom.Element) impuestos.item(0);
-                    reembolsoFactura.setImpuesto("IVA");
-                    reembolsoFactura.setPorcentaje(impuesto.getElementsByTagName("tarifa").item(0).getTextContent() + "%");
-                    reembolsoFactura.setBaseImponible(Double.parseDouble(impuesto.getElementsByTagName("baseImponibleReembolso").item(0).getTextContent()));
-                    reembolsoFactura.setValorImpuesto(Double.parseDouble(impuesto.getElementsByTagName("impuestoReembolso").item(0).getTextContent()));
-                    double total = reembolsoFactura.getBaseImponible() + reembolsoFactura.getValorImpuesto();
+                    NodeList impuestos = element.getElementsByTagName("detalleImpuesto");
+                    double total = 0.00;
+                    double baseImponible = 0.00;
+                    double baseImponibleSinIva = 0.00;
+                    double iva = 0.00;
+                    for (int y = 0; y < impuestos.getLength(); y++) {
+                        org.w3c.dom.Element impuesto = (org.w3c.dom.Element) impuestos.item(y);
+                        if (impuesto.getElementsByTagName("codigoPorcentaje").item(0).getTextContent().equals("2")) {
+                            baseImponible = Double.parseDouble(impuesto.getElementsByTagName("baseImponibleReembolso").item(0).getTextContent());
+                            iva = Double.parseDouble(impuesto.getElementsByTagName("impuestoReembolso").item(0).getTextContent());
+                        } else if (impuesto.getElementsByTagName("codigoPorcentaje").item(0).getTextContent().equals("0")) {
+                            baseImponibleSinIva = Double.parseDouble(impuesto.getElementsByTagName("baseImponibleReembolso").item(0).getTextContent());
+                        }
+                    }
+                    reembolsoFactura.setBaseImponible(baseImponible);
+                    reembolsoFactura.setBaseImponibleSinIva(baseImponibleSinIva);
+                    reembolsoFactura.setValorImpuesto(iva);
+                    total = reembolsoFactura.getBaseImponible() + reembolsoFactura.getValorImpuesto() + reembolsoFactura.getBaseImponibleSinIva();
                     reembolsoFactura.setTotal(total);
                     factura.getReembolso().add(reembolsoFactura);
-
                 }
             }
 
@@ -673,7 +683,7 @@ public class JasperRide {
             tipoComprobante = "GUÍA DE REMISIÓN";
         } else if (codDoc.equals("07")) {
             tipoComprobante = "COMPROBANTE DE RETENCIÓN";
-        }else if (codDoc.equals("03")) {
+        } else if (codDoc.equals("03")) {
             tipoComprobante = "LIQUIDACIÓN DE COMPRA DE BIENES Y PRESTACIÓN DE SERVICIOS";
         }
 
