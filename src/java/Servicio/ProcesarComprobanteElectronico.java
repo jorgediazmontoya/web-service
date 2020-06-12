@@ -44,6 +44,9 @@ import org.w3c.dom.NodeList;
 import Util.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.xml.sax.InputSource;
 
 /**
  *
@@ -52,7 +55,8 @@ import java.util.Date;
 @WebService(serviceName = "ProcesarComprobanteElectronico")
 @XmlSeeAlso({Factura.class, LiquidacionCompra.class, GuiaRemision.class, ComprobanteRetencion.class, NotaDebito.class, NotaCredito.class, ComprobantePendiente.class, ConfigAplicacion.class, ConfigCorreo.class, Proforma.class})
 public class ProcesarComprobanteElectronico {
-
+    private final String DIR_IREPORT = "/home/Facturacion/IReport";
+    
     @WebMethod(operationName = "procesarComprobante")
     public Respuesta procesarComprobante(@WebParam(name = "comprobante") ComprobanteGeneral comprobante, @WebParam(name = "envioSRI") boolean envioSRI) {
         ConfigAplicacion configAplicacion = comprobante.getConfigAplicacion();
@@ -116,7 +120,7 @@ public class ProcesarComprobanteElectronico {
                 JasperRide jasperRide = new JasperRide();
                 String numAutorizacion = respuestaInterna.getComprobante().getElementsByTagName("claveAcceso").item(0).getTextContent();
                 //ride.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo());
-                jasperRide.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo(), "D:\\Desarrollos\\IReport");
+                jasperRide.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo(), DIR_IREPORT);
             } catch (Exception e) {
                 respuesta.addMensaje(new MensajeGenerado("1000", "ERROR GUARDANDO EL PDF AUTORIZADO", null, "WARNING"));
             }
@@ -138,6 +142,92 @@ public class ProcesarComprobanteElectronico {
                 }
             } catch (Exception e) {
                 respuesta.addMensaje(new MensajeGenerado("1000", "ERROR ENVIANDO EL CORREO AL CLIENTE", e.getMessage(), "WARNING"));
+            }
+        }
+
+        return respuesta;
+    }
+
+    @WebMethod(operationName = "generarXMLPDF")
+    public Respuesta generarXMLPDF(@WebParam(name = "comprobante") ComprobanteGeneral comprobante, @WebParam(name = "envioEmail") boolean envioEmail) {
+        ConfigAplicacion configAplicacion = comprobante.getConfigAplicacion();
+        ConfigCorreo configCorreo = comprobante.getConfigCorreo();
+
+        RespuestaInterna respuestaInterna = new RespuestaInterna();
+        Respuesta respuesta = new Respuesta();
+        Facturacion facturacion = new Facturacion();
+        facturacion.setAmbiente(comprobante.getAmbiente());
+        Document xmlComprobante = null;
+        try {
+            xmlComprobante = comprobante.crearXMLComprobante();
+            respuesta.setClaveAcceso(xmlComprobante.getElementsByTagName("claveAcceso").item(0).getTextContent());
+        } catch (Exception e) {
+            respuesta.setEstadoComprobante("ERROR");
+            respuesta.addMensaje(new MensajeGenerado("1000", "ERROR CREANDO EL XML DEL DOCUMENTO RECIBIDO", null, "EXCEPCION"));
+            return respuesta;
+        }
+        try {
+            respuestaInterna = facturacion.ProcesarComprobante(xmlComprobante, configAplicacion, false);
+        } catch (Exception e) {
+            respuesta.setEstadoComprobante("ERROR");
+            respuesta.addMensaje(new MensajeGenerado("1000", "ERROR PROCESANDO EL XML DEL COMPROBANTE ELECTRONICO", null, "EXCEPCION"));
+
+            return respuesta;
+        }
+        
+        respuesta.setEstadoComprobante(respuestaInterna.getEstadoComprobante());
+        respuesta.setNumeroAutorizacion(respuestaInterna.getNumeroAutorizacion());
+        respuesta.setFechaAutorizacion(respuestaInterna.getFechaAutorizacion());
+        respuesta.setMensajes(respuestaInterna.getMensajes());
+        if (respuestaInterna.getEstadoComprobante().equals("FIRMADO")) {
+            String directorioRaiz = configAplicacion.getDirAutorizados();
+            String nombreFichero = "", dirGuardarDoc = "";
+            try {
+                xmlComprobante = respuestaInterna.getComprobante();
+                directorioRaiz = Paths.get(directorioRaiz).resolve(crearNombreCarpeta(xmlComprobante)).toString();
+                File directorio = new File(directorioRaiz);
+                if (!directorio.exists()) {
+                    directorio.mkdir();
+                }
+                nombreFichero = crearNombreFichero(xmlComprobante);
+                dirGuardarDoc = Paths.get(directorioRaiz).resolve(nombreFichero).toString();
+
+                Source source = new DOMSource(respuestaInterna.getComprobante());
+                Result result = new StreamResult(new File(dirGuardarDoc));
+                Transformer transformer = TransformerFactory.newInstance().newTransformer();
+                transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+                transformer.transform(source, result);
+            } catch (Exception e) {
+                respuesta.addMensaje(new MensajeGenerado("1000", "ERROR GUARDANDO EL XML AUTORIZADO", null, "WARNING"));
+            }
+            try {
+                JasperRide jasperRide = new JasperRide();
+                String numAutorizacion = respuestaInterna.getComprobante().getElementsByTagName("claveAcceso").item(0).getTextContent();
+                jasperRide.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo(), DIR_IREPORT);
+            } catch (Exception e) {
+                respuesta.addMensaje(new MensajeGenerado("1000", "ERROR GUARDANDO EL PDF", null, "WARNING"));
+            }
+            if (envioEmail) {
+                try {
+                    JCMail jcmail = new JCMail();
+                    jcmail.setHost(configCorreo.getCorreoHost());
+                    jcmail.setPort(configCorreo.getCorreoPort());
+                    jcmail.setFrom(configCorreo.getCorreoRemitente());
+                    jcmail.setPassword(configCorreo.getCorreoPass().toCharArray());
+                    jcmail.setSubject(configCorreo.getCorreoAsunto());
+
+                    String destinatarios = obtenerDestinatarios(xmlComprobante);
+                    jcmail.setToBBC(configCorreo.getBBC());
+                    jcmail.setToCC(configCorreo.getCC());
+                    if (!destinatarios.equals("")) {
+                        jcmail.setMessage(crearMensajeCorreo(xmlComprobante));
+                        jcmail.setTo(destinatarios);
+                        jcmail.SEND(nombreFichero, dirGuardarDoc, configCorreo.isSslHabilitado());
+                    }
+                } catch (Exception e) {
+                    respuesta.addMensaje(new MensajeGenerado("1000", "ERROR ENVIANDO EL CORREO AL CLIENTE", e.getMessage(), "WARNING"));
+                }
             }
         }
 
@@ -205,7 +295,7 @@ public class ProcesarComprobanteElectronico {
             try {
                 JasperRide jasperRide = new JasperRide();
                 String numAutorizacion = respuestaInterna.getComprobante().getElementsByTagName("claveAcceso").item(0).getTextContent();
-                jasperRide.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo(), "D:\\Desarrollos\\IReport");
+                jasperRide.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo(), DIR_IREPORT);
             } catch (Exception e) {
                 respuesta.addMensaje(new MensajeGenerado("1000", "ERROR GUARDANDO EL PDF AUTORIZADO", null, "WARNING"));
             }
@@ -282,7 +372,7 @@ public class ProcesarComprobanteElectronico {
                     String numAutorizacion = respuestaInterna.getComprobante().getElementsByTagName("claveAcceso").item(0).getTextContent();
                     //ride.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo());
                     JasperRide jasperRide = new JasperRide();
-                    jasperRide.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo(), "D:\\Desarrollos\\IReport");
+                    jasperRide.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo(), DIR_IREPORT);
                     if (comprobantePendiente.isEnviarEmail()) {
                         try {
                             JCMail jcmail = new JCMail();
@@ -326,6 +416,53 @@ public class ProcesarComprobanteElectronico {
         return respuesta;
     }
 
+    @WebMethod(operationName = "reenviarEmail")
+    public Respuesta reenviarEmail(@WebParam(name = "reenvioEmailParam") ReenvioEmailParam reenvioEmailParam) {
+        Respuesta respuesta = new Respuesta();
+        try {
+            ConfigCorreo configCorreo = reenvioEmailParam.getConfigCorreo();
+            JCMail jcmail = new JCMail();
+            jcmail.setHost(configCorreo.getCorreoHost());
+            jcmail.setPort(configCorreo.getCorreoPort());
+            jcmail.setFrom(configCorreo.getCorreoRemitente());
+            jcmail.setPassword(configCorreo.getCorreoPass().toCharArray());
+            jcmail.setSubject(configCorreo.getCorreoAsunto());
+
+            String dirXmlAutorizado = reenvioEmailParam.getDirDocAutorizados();
+            dirXmlAutorizado = Paths.get(dirXmlAutorizado).resolve(reenvioEmailParam.getIdentificacionComprador()).resolve(reenvioEmailParam.getNombreArchivo()).toString() + ".xml";
+            File xml = new File(dirXmlAutorizado);
+            if (xml.exists()) {
+                DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+                Document xmlComprobante = dBuilder.parse(new InputSource(dirXmlAutorizado));
+
+                String destinatarios = obtenerDestinatarios(xmlComprobante);
+                if (reenvioEmailParam.getOtrosDestinatarios() != null && !reenvioEmailParam.getOtrosDestinatarios().equals("")) {
+                    if (!destinatarios.equals("")) {
+                        destinatarios = destinatarios + "," + reenvioEmailParam.getOtrosDestinatarios();
+                    } else {
+                        destinatarios = reenvioEmailParam.getOtrosDestinatarios();
+                    }
+                }
+                jcmail.setToBBC(configCorreo.getBBC());
+                jcmail.setToCC(configCorreo.getCC());
+                if (!destinatarios.equals("")) {
+                    jcmail.setMessage(crearMensajeCorreo(xmlComprobante));
+                    jcmail.setTo(destinatarios);
+                    jcmail.SEND(reenvioEmailParam.getNombreArchivo() + ".xml", dirXmlAutorizado, configCorreo.isSslHabilitado());
+                } else {
+                    respuesta.addMensaje(new MensajeGenerado("1000", "ERROR ENVIANDO EL CORREO AL CLIENTE", "NO EXISTEN DESTINATARIOS", "WARNING"));
+                }
+            }else{
+                respuesta.addMensaje(new MensajeGenerado("1000", "EL XML NO EXISTE", "El xml en la ruta: " + dirXmlAutorizado + " NO EXISTE", "WARNING"));
+            }
+        } catch (Exception e) {
+            respuesta.addMensaje(new MensajeGenerado("1000", "ERROR ENVIANDO EL CORREO AL CLIENTE", e.getMessage(), "WARNING"));
+        }
+
+        return respuesta;
+    }
+    
     @WebMethod(operationName = "obtenerComprobante")
     public RespuestaComprobanteConsultado obtenerComprobante(@WebParam(name = "claveAcceso") String claveAcceso, @WebParam(name = "ambiente") String ambiente) {
         Facturacion facturacion = new Facturacion();
@@ -355,7 +492,7 @@ public class ProcesarComprobanteElectronico {
         try {
             //Ride ride = new Ride();
             JasperRideProforma jasperRideProforma = new JasperRideProforma();
-            jasperRideProforma.CrearRide(proforma, dirGuardarDoc, "D:\\Desarrollos\\IReport");
+            jasperRideProforma.CrearRide(proforma, dirGuardarDoc, DIR_IREPORT);
             respuesta.setEstadoComprobante("CREADA");
         } catch (Exception e) {
             respuesta.setEstadoComprobante("ERROR");
