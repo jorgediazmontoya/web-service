@@ -9,6 +9,7 @@ import TiposComprobantes.Bloques.CampoAdicional;
 import TiposComprobantes.Bloques.TotalImpuesto;
 import TiposComprobantes.Bloques.DetalleLiquidacionCompra;
 import TiposComprobantes.Bloques.Pago;
+import TiposComprobantes.Bloques.ReembolsoLiquidacionCompra;
 import Util.Util;
 import java.util.List;
 import javax.xml.parsers.ParserConfigurationException;
@@ -33,6 +34,11 @@ public class LiquidacionCompra extends ComprobanteGeneral {
     private List<DetalleLiquidacionCompra> detalles;
     private List<CampoAdicional> infoAdicional;
     private List<Pago> pagos;
+    private String codDocReemb;
+    private String totalComprobantesReembolso;
+    private String totalBaseImponibleReembolso;
+    private String totalImpuestoReembolso;
+    private List<ReembolsoLiquidacionCompra> reembolsos;
 
     @Override
     public Document crearXMLComprobante() throws ParserConfigurationException {
@@ -93,6 +99,25 @@ public class LiquidacionCompra extends ComprobanteGeneral {
             tagTotalDescuento.setTextContent(getTotalDescuento());
             tagInfoLiquidacionCompra.appendChild(tagTotalDescuento);
         }
+        
+        if (getCodDocReemb() != null && !codDocReemb.equals("")) {
+            Element tagCodDocReemb = xmlComprobante.createElement("codDocReembolso");
+            tagCodDocReemb.setTextContent(getCodDocReemb());
+            tagInfoLiquidacionCompra.appendChild(tagCodDocReemb);
+
+            Element tagTotalComprobantesReembolso = xmlComprobante.createElement("totalComprobantesReembolso");
+            tagTotalComprobantesReembolso.setTextContent(getTotalComprobantesReembolso());
+            tagInfoLiquidacionCompra.appendChild(tagTotalComprobantesReembolso);
+
+            Element tagTotalBaseImponibleReembolso = xmlComprobante.createElement("totalBaseImponibleReembolso");
+            tagTotalBaseImponibleReembolso.setTextContent(getTotalBaseImponibleReembolso());
+            tagInfoLiquidacionCompra.appendChild(tagTotalBaseImponibleReembolso);
+
+            Element tagTotalImpuestoReembolso = xmlComprobante.createElement("totalImpuestoReembolso");
+            tagTotalImpuestoReembolso.setTextContent(getTotalImpuestoReembolso());
+            tagInfoLiquidacionCompra.appendChild(tagTotalImpuestoReembolso);
+        }
+        
         tagInfoLiquidacionCompra.appendChild(util.construirXMLTotalConImpuestos(getTotalConImpuesto(), xmlComprobante));
 
         Element tagImporteTotal = xmlComprobante.createElement("importeTotal");
@@ -107,6 +132,11 @@ public class LiquidacionCompra extends ComprobanteGeneral {
         tagInfoLiquidacionCompra.appendChild(util.construirXMLPagos(getPagos(), xmlComprobante));
         tagLiquidacionCompra.appendChild(tagInfoLiquidacionCompra);
         tagLiquidacionCompra.appendChild(util.construirXMLDetallesLiquidacionCompra(getDetalles(), xmlComprobante));
+        
+        if (getReembolsos() != null && !reembolsos.isEmpty() && getReembolsos().get(0) != null) {
+            tagLiquidacionCompra.appendChild(util.construirXMLReembolsosLiquidacionCompra(reembolsos, xmlComprobante));
+        }
+        
         if (getInfoAdicional() != null && !infoAdicional.isEmpty() && getInfoAdicional().get(0) != null) {
             tagLiquidacionCompra.appendChild(util.construirXMLInfoAdicional(getInfoAdicional(), xmlComprobante));
         }
@@ -279,6 +309,76 @@ public class LiquidacionCompra extends ComprobanteGeneral {
      */
     public void setPagos(List<Pago> pagos) {
         this.pagos = pagos;
+    }
+
+    /**
+     * @return the codDocReemb
+     */
+    public String getCodDocReemb() {
+        return codDocReemb;
+    }
+
+    /**
+     * @param codDocReemb the codDocReemb to set
+     */
+    public void setCodDocReemb(String codDocReemb) {
+        this.codDocReemb = codDocReemb;
+    }
+
+    /**
+     * @return the totalComprobantesReembolso
+     */
+    public String getTotalComprobantesReembolso() {
+        return totalComprobantesReembolso;
+    }
+
+    /**
+     * @param totalComprobantesReembolso the totalComprobantesReembolso to set
+     */
+    public void setTotalComprobantesReembolso(String totalComprobantesReembolso) {
+        this.totalComprobantesReembolso = totalComprobantesReembolso;
+    }
+
+    /**
+     * @return the totalBaseImponibleReembolso
+     */
+    public String getTotalBaseImponibleReembolso() {
+        return totalBaseImponibleReembolso;
+    }
+
+    /**
+     * @param totalBaseImponibleReembolso the totalBaseImponibleReembolso to set
+     */
+    public void setTotalBaseImponibleReembolso(String totalBaseImponibleReembolso) {
+        this.totalBaseImponibleReembolso = totalBaseImponibleReembolso;
+    }
+
+    /**
+     * @return the totalImpuestoReembolso
+     */
+    public String getTotalImpuestoReembolso() {
+        return totalImpuestoReembolso;
+    }
+
+    /**
+     * @param totalImpuestoReembolso the totalImpuestoReembolso to set
+     */
+    public void setTotalImpuestoReembolso(String totalImpuestoReembolso) {
+        this.totalImpuestoReembolso = totalImpuestoReembolso;
+    }
+
+    /**
+     * @return the reembolsos
+     */
+    public List<ReembolsoLiquidacionCompra> getReembolsos() {
+        return reembolsos;
+    }
+
+    /**
+     * @param reembolsos the reembolsos to set
+     */
+    public void setReembolsos(List<ReembolsoLiquidacionCompra> reembolsos) {
+        this.reembolsos = reembolsos;
     }
 
    

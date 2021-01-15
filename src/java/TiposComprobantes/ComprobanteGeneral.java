@@ -33,6 +33,8 @@ public class ComprobanteGeneral {
     private String ptoEmision;
     private String secuencial;
     private String dirMatriz;
+    private String regimenMicroempresas;
+    private String agenteRetencion;
     private String dirEstablecimiento;
     private String contribuyenteEspecial;
     private String obligadoContabilidad;
@@ -71,10 +73,10 @@ public class ComprobanteGeneral {
         tagInfoTributaria.appendChild(tagRuc);
 
         Element tagClaveAcceso = xmlComprobante.createElement("claveAcceso");
-        if (claveAcc == null || claveAcc.equals("")) {
+        if (getClaveAcc() == null || getClaveAcc().equals("")) {
             tagClaveAcceso.setTextContent(claveAcceso());
         } else {
-            tagClaveAcceso.setTextContent(claveAcc);
+            tagClaveAcceso.setTextContent(getClaveAcc());
         }
         tagInfoTributaria.appendChild(tagClaveAcceso);
 
@@ -98,20 +100,32 @@ public class ComprobanteGeneral {
         tagDirMatriz.setTextContent(getDirMatriz());
         tagInfoTributaria.appendChild(tagDirMatriz);
 
+        if (getRegimenMicroempresas() != null && !getRegimenMicroempresas().equals("")) {
+            Element tagRegimenMicroempresas = xmlComprobante.createElement("regimenMicroempresas");
+            tagRegimenMicroempresas.setTextContent("CONTRIBUYENTE RÉGIMEN MICROEMPRESAS");
+            tagInfoTributaria.appendChild(tagRegimenMicroempresas);
+        }
+        
+        if (getAgenteRetencion() != null && !agenteRetencion.equals("")) {
+            Element tagAgenteRetencion = xmlComprobante.createElement("agenteRetencion");
+            tagAgenteRetencion.setTextContent(getAgenteRetencion());
+            tagInfoTributaria.appendChild(tagAgenteRetencion);
+        }
+        
         tagRoot.appendChild(tagInfoTributaria);
         return xmlComprobante;
     }
 
     protected String claveAcceso() {
-        String claveAcceso = fechaEmision.replaceAll("/", "");
-        claveAcceso += codDoc;
-        claveAcceso += ruc;
-        claveAcceso += ambiente;
-        String serie = establecimiento + ptoEmision;
+        String claveAcceso = getFechaEmision().replaceAll("/", "");
+        claveAcceso += getCodDoc();
+        claveAcceso += getRuc();
+        claveAcceso += getAmbiente();
+        String serie = getEstablecimiento() + getPtoEmision();
         claveAcceso += serie;
-        claveAcceso += secuencial;
+        claveAcceso += getSecuencial();
         claveAcceso += "12345678";
-        claveAcceso += tipoEmision;
+        claveAcceso += getTipoEmision();
         claveAcceso += modulo11(claveAcceso);
 
         return claveAcceso;
@@ -388,6 +402,34 @@ public class ComprobanteGeneral {
      */
     public void setClaveAcc(String claveAcc) {
         this.claveAcc = claveAcc;
+    }
+
+    /**
+     * @return the regimenMicroempresas
+     */
+    public String getRegimenMicroempresas() {
+        return regimenMicroempresas;
+    }
+
+    /**
+     * @param regimenMicroempresas the regimenMicroempresas to set
+     */
+    public void setRegimenMicroempresas(String regimenMicroempresas) {
+        this.regimenMicroempresas = regimenMicroempresas;
+    }
+
+    /**
+     * @return the agenteRetencion
+     */
+    public String getAgenteRetencion() {
+        return agenteRetencion;
+    }
+
+    /**
+     * @param agenteRetencion the agenteRetencion to set
+     */
+    public void setAgenteRetencion(String agenteRetencion) {
+        this.agenteRetencion = agenteRetencion;
     }
 
 }

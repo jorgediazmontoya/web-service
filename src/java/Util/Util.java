@@ -6,6 +6,7 @@
 package Util;
 
 import TiposComprobantes.Bloques.ReembolsoFactura;
+import TiposComprobantes.Bloques.ReembolsoLiquidacionCompra;
 import TiposComprobantes.Bloques.CampoAdicional;
 import TiposComprobantes.Bloques.Destinatario;
 import TiposComprobantes.Bloques.DetalleAdicional;
@@ -248,6 +249,62 @@ public class Util {
 
     }
 
+    public Element construirXMLReembolsosLiquidacionCompra(List<ReembolsoLiquidacionCompra> reembolsos, Document object) {
+        Element tagReembolsos = object.createElement("reembolsos");
+        for (Iterator<ReembolsoLiquidacionCompra> it = reembolsos.iterator(); it.hasNext();) {
+            Element tagReembolso = object.createElement("reembolsoDetalle");
+            ReembolsoLiquidacionCompra reembolso = it.next();
+
+            Element tagTipoIdentificacionProveedorReembolso = object.createElement("tipoIdentificacionProveedorReembolso");
+            tagTipoIdentificacionProveedorReembolso.setTextContent(reembolso.getTipoIdentificacionProveedorReembolso());
+            tagReembolso.appendChild(tagTipoIdentificacionProveedorReembolso);
+
+            Element tagIdentificacionProveedorReembolso = object.createElement("identificacionProveedorReembolso");
+            tagIdentificacionProveedorReembolso.setTextContent(reembolso.getIdentificacionProveedorReembolso());
+            tagReembolso.appendChild(tagIdentificacionProveedorReembolso);
+
+            Element tagCodPaisPagoProveedorReembolso = object.createElement("codPaisPagoProveedorReembolso");
+            tagCodPaisPagoProveedorReembolso.setTextContent(reembolso.getCodPaisPagoProveedorReembolso());
+            tagReembolso.appendChild(tagCodPaisPagoProveedorReembolso);
+
+            Element tagTipoProveedorReembolso = object.createElement("tipoProveedorReembolso");
+            tagTipoProveedorReembolso.setTextContent(reembolso.getTipoProveedorReembolso());
+            tagReembolso.appendChild(tagTipoProveedorReembolso);
+
+            Element tagCodDocReembolso = object.createElement("codDocReembolso");
+            tagCodDocReembolso.setTextContent(reembolso.getCodDocReembolso());
+            tagReembolso.appendChild(tagCodDocReembolso);
+
+            Element tagEstabDocReembolso = object.createElement("estabDocReembolso");
+            tagEstabDocReembolso.setTextContent(reembolso.getEstabDocReembolso());
+            tagReembolso.appendChild(tagEstabDocReembolso);
+
+            Element tagPtoEmiDocReembolso = object.createElement("ptoEmiDocReembolso");
+            tagPtoEmiDocReembolso.setTextContent(reembolso.getPtoEmiDocReembolso());
+            tagReembolso.appendChild(tagPtoEmiDocReembolso);
+
+            Element tagSecuencialDocReembolso = object.createElement("secuencialDocReembolso");
+            tagSecuencialDocReembolso.setTextContent(reembolso.getSecuencialDocReembolso());
+            tagReembolso.appendChild(tagSecuencialDocReembolso);
+
+            Element tagFechaEmisionDocReembolso = object.createElement("fechaEmisionDocReembolso");
+            tagFechaEmisionDocReembolso.setTextContent(reembolso.getFechaEmisionDocReembolso());
+            tagReembolso.appendChild(tagFechaEmisionDocReembolso);
+
+            String numAutorizacion = reembolso.getNumeroautorizacionDocReemb();
+
+            Element tagNumeroautorizacionDocReemb = object.createElement("numeroautorizacionDocReemb");
+            tagNumeroautorizacionDocReemb.setTextContent(numAutorizacion);
+            tagReembolso.appendChild(tagNumeroautorizacionDocReemb);
+
+            tagReembolso.appendChild(construirXMLImpuestosReembolso(reembolso.getImpuestos(), object));
+            tagReembolsos.appendChild(tagReembolso);
+        }
+
+        return tagReembolsos;
+    }
+
+    
     public Element construirXMLReembolsosFactura(List<ReembolsoFactura> reembolsos, Document object) {
         Element tagReembolsos = object.createElement("reembolsos");
         for (Iterator<ReembolsoFactura> it = reembolsos.iterator(); it.hasNext();) {

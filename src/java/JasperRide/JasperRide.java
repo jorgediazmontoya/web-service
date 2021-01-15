@@ -53,11 +53,21 @@ public class JasperRide {
         if (xmlComprobante.getElementsByTagName("dirEstablecimiento").getLength() != 0) {
             dirEstablecimiento = xmlComprobante.getElementsByTagName("dirEstablecimiento").item(0).getTextContent();
         }
+        String regimenMicroempresas = "";
+        if (xmlComprobante.getElementsByTagName("regimenMicroempresas").getLength() != 0) {
+            regimenMicroempresas = xmlComprobante.getElementsByTagName("regimenMicroempresas").item(0).getTextContent();
+        }
+        String agenteRetencion = "";
+        if (xmlComprobante.getElementsByTagName("agenteRetencion").getLength() != 0) {
+            agenteRetencion = xmlComprobante.getElementsByTagName("agenteRetencion").item(0).getTextContent();
+        }
         String contribuyenteEspecial = "";
         if (xmlComprobante.getElementsByTagName("contribuyenteEspecial").getLength() != 0) {
             contribuyenteEspecial = xmlComprobante.getElementsByTagName("contribuyenteEspecial").item(0).getTextContent();
         }
         String obligadoContabilidad = xmlComprobante.getElementsByTagName("obligadoContabilidad").item(0).getTextContent();
+        NodeList campoAdicional = xmlComprobante.getElementsByTagName("campoAdicional");
+        int cantidad = campoAdicional.getLength();
 
         List data = new ArrayList();
         String dirPlantillas = dirPlantillaJasper(ruc, ireportDir);
@@ -66,7 +76,7 @@ public class JasperRide {
         String subTotal0 = "0.00";
         String subTotalNoObjetoIVA = "0.00";
         String subTotalExentoIVA = "0.00";
-        String ICE = "";
+        String ICE = "0.00";
         String IRBPNR = "";
         String IVA12 = "0.00";
         String importeTotal = "0.00";
@@ -147,12 +157,12 @@ public class JasperRide {
             factura.setIdentificacionComprador(identificacionComprador);
             factura.setFechaEmision(fechaEmision);
             factura.setGuiaRemision(guiaRemision);
-            NodeList campoAdicional = xmlComprobante.getElementsByTagName("campoAdicional");
-            int cantidad = campoAdicional.getLength();
+
             for (int i = 0; i < cantidad; i++) {
                 Node node = campoAdicional.item(i);
                 String nombre = node.getAttributes().item(0).getNodeValue();
                 String valor = node.getTextContent();
+
                 JasperComprobantes.CampoAdicional nuevoCampoAdicional = new JasperComprobantes.CampoAdicional();
                 nuevoCampoAdicional.setNombre(nombre);
                 nuevoCampoAdicional.setValor(valor);
@@ -196,6 +206,7 @@ public class JasperRide {
             factura.setSubTotalExentoIVA(subTotalExentoIVA);
             factura.setSubTotalNoObjetoIVA(subTotalNoObjetoIVA);
             factura.setIVA12(IVA12);
+            factura.setICE(ICE);
             factura.setImporteTotal(subTotal0);
             factura.setSubTotalSinImpuesto(xmlComprobante.getElementsByTagName("totalSinImpuestos").item(0).getTextContent());
             factura.setTotalDescuento(xmlComprobante.getElementsByTagName("totalDescuento").item(0).getTextContent());
@@ -276,12 +287,12 @@ public class JasperRide {
             liqCompra.setIdentificacionProveedor(identificacionProveedor);
             liqCompra.setFechaEmision(fechaEmision);
             liqCompra.setDireccionProveedor(direccionProveedor);
-            NodeList campoAdicional = xmlComprobante.getElementsByTagName("campoAdicional");
-            int cantidad = campoAdicional.getLength();
+
             for (int i = 0; i < cantidad; i++) {
                 Node node = campoAdicional.item(i);
                 String nombre = node.getAttributes().item(0).getNodeValue();
                 String valor = node.getTextContent();
+
                 JasperComprobantes.CampoAdicional nuevoCampoAdicional = new JasperComprobantes.CampoAdicional();
                 nuevoCampoAdicional.setNombre(nombre);
                 nuevoCampoAdicional.setValor(valor);
@@ -329,6 +340,45 @@ public class JasperRide {
             liqCompra.setSubTotalSinImpuesto(xmlComprobante.getElementsByTagName("totalSinImpuestos").item(0).getTextContent());
             liqCompra.setTotalDescuento(xmlComprobante.getElementsByTagName("totalDescuento").item(0).getTextContent());
             liqCompra.setImporteTotal(importeTotal);
+
+            NodeList reembolsos = xmlComprobante.getElementsByTagName("reembolsoDetalle");
+            if (reembolsos.getLength() > 0) {
+                cantidad = reembolsos.getLength();
+                for (int i = 0; i < cantidad; i++) {
+                    org.w3c.dom.Element element = (org.w3c.dom.Element) reembolsos.item(i);
+                    JasperComprobantes.ReembolsoLiquidacionCompra reembolsoLiquidacionCompra = new JasperComprobantes.ReembolsoLiquidacionCompra();
+                    reembolsoLiquidacionCompra.setIdentificacionProveedorReembolso(element.getElementsByTagName("identificacionProveedorReembolso").item(0).getTextContent());
+                    reembolsoLiquidacionCompra.setTipoDocumento("FACTURA");
+
+                    String noDocumento = element.getElementsByTagName("estabDocReembolso").item(0).getTextContent()
+                            + "-" + element.getElementsByTagName("ptoEmiDocReembolso").item(0).getTextContent()
+                            + "-" + element.getElementsByTagName("secuencialDocReembolso").item(0).getTextContent();
+                    reembolsoLiquidacionCompra.setNoDocumento(noDocumento);
+                    reembolsoLiquidacionCompra.setFechaEmisionDocReembolso(element.getElementsByTagName("fechaEmisionDocReembolso").item(0).getTextContent());
+
+                    NodeList impuestos = element.getElementsByTagName("detalleImpuesto");
+                    double total = 0.00;
+                    double baseImponible = 0.00;
+                    double baseImponibleSinIva = 0.00;
+                    double iva = 0.00;
+                    for (int y = 0; y < impuestos.getLength(); y++) {
+                        org.w3c.dom.Element impuesto = (org.w3c.dom.Element) impuestos.item(y);
+                        if (impuesto.getElementsByTagName("codigoPorcentaje").item(0).getTextContent().equals("2")) {
+                            baseImponible = Double.parseDouble(impuesto.getElementsByTagName("baseImponibleReembolso").item(0).getTextContent());
+                            iva = Double.parseDouble(impuesto.getElementsByTagName("impuestoReembolso").item(0).getTextContent());
+                        } else if (impuesto.getElementsByTagName("codigoPorcentaje").item(0).getTextContent().equals("0")) {
+                            baseImponibleSinIva = Double.parseDouble(impuesto.getElementsByTagName("baseImponibleReembolso").item(0).getTextContent());
+                        }
+                    }
+                    reembolsoLiquidacionCompra.setBaseImponible(baseImponible);
+                    reembolsoLiquidacionCompra.setBaseImponibleSinIva(baseImponibleSinIva);
+                    reembolsoLiquidacionCompra.setValorImpuesto(iva);
+                    total = reembolsoLiquidacionCompra.getBaseImponible() + reembolsoLiquidacionCompra.getValorImpuesto() + reembolsoLiquidacionCompra.getBaseImponibleSinIva();
+                    reembolsoLiquidacionCompra.setTotal(total);
+                    liqCompra.getReembolso().add(reembolsoLiquidacionCompra);
+                }
+            }
+
             data.add(liqCompra);
         }
         if (codDoc.equals("04")) {
@@ -364,12 +414,11 @@ public class JasperRide {
             notaCredito.setFechaEmisionDocSustento(fechaEmisionComprobanteModificado);
             notaCredito.setMotivo(razonModificacion);
 
-            NodeList campoAdicional = xmlComprobante.getElementsByTagName("campoAdicional");
-            int cantidad = campoAdicional.getLength();
             for (int i = 0; i < cantidad; i++) {
                 Node node = campoAdicional.item(i);
                 String nombre = node.getAttributes().item(0).getNodeValue();
                 String valor = node.getTextContent();
+
                 JasperComprobantes.CampoAdicional nuevoCampoAdicional = new JasperComprobantes.CampoAdicional();
                 nuevoCampoAdicional.setNombre(nombre);
                 nuevoCampoAdicional.setValor(valor);
@@ -438,12 +487,11 @@ public class JasperRide {
             notaDebito.setNumDocModificado(numComprobanteModificado);
             notaDebito.setFechaEmisionDocSustento(fechaEmisionComprobanteModificado);
 
-            NodeList campoAdicional = xmlComprobante.getElementsByTagName("campoAdicional");
-            int cantidad = campoAdicional.getLength();
             for (int i = 0; i < cantidad; i++) {
                 Node node = campoAdicional.item(i);
                 String nombre = node.getAttributes().item(0).getNodeValue();
                 String valor = node.getTextContent();
+
                 JasperComprobantes.CampoAdicional nuevoCampoAdicional = new JasperComprobantes.CampoAdicional();
                 nuevoCampoAdicional.setNombre(nombre);
                 nuevoCampoAdicional.setValor(valor);
@@ -508,12 +556,11 @@ public class JasperRide {
             retencion.setIdentificacionSujetoRetenido(identificacionSujetoRetenido);
             retencion.setFechaEmision(fechaEmision);
 
-            NodeList campoAdicional = xmlComprobante.getElementsByTagName("campoAdicional");
-            int cantidad = campoAdicional.getLength();
             for (int i = 0; i < cantidad; i++) {
                 Node node = campoAdicional.item(i);
                 String nombre = node.getAttributes().item(0).getNodeValue();
                 String valor = node.getTextContent();
+
                 JasperComprobantes.CampoAdicional nuevoCampoAdicional = new JasperComprobantes.CampoAdicional();
                 nuevoCampoAdicional.setNombre(nombre);
                 nuevoCampoAdicional.setValor(valor);
@@ -614,12 +661,12 @@ public class JasperRide {
 
                 guia.getDestinatarios().add(destinatarioReport);
             }
-            NodeList campoAdicional = xmlComprobante.getElementsByTagName("campoAdicional");
-            int cantidad = campoAdicional.getLength();
+
             for (int i = 0; i < cantidad; i++) {
                 Node node = campoAdicional.item(i);
                 String nombre = node.getAttributes().item(0).getNodeValue();
                 String valor = node.getTextContent();
+
                 JasperComprobantes.CampoAdicional nuevoCampoAdicional = new JasperComprobantes.CampoAdicional();
                 nuevoCampoAdicional.setNombre(nombre);
                 nuevoCampoAdicional.setValor(valor);
@@ -628,11 +675,19 @@ public class JasperRide {
 
             data.add(guia);
         }
+        HashMap parameters = new HashMap();
+
+        if (!regimenMicroempresas.equals("")) {
+            parameters.put("LEYENDA_REGIMEN", "CONTRIBUYENTE RÉGIMEN MICROEMPRESAS");
+        }
+        if (!agenteRetencion.equals("")) {
+            parameters.put("LEYENDA_AGENTE_RETENCION", "Agente de Retención Resolucion No. " + agenteRetencion);
+        }
 
         InputStream inputStream = new FileInputStream(new File(dirPlantilla));
         JasperDesign jasperDesign = JRXmlLoader.load(inputStream);
         JasperReport jasperReport = JasperCompileManager.compileReport(jasperDesign);
-        HashMap parameters = new HashMap();
+
         parameters.put("DIR_PLANTILLAS", dirPlantillas);
         JRBeanCollectionDataSource beanColDataSource = new JRBeanCollectionDataSource(data);
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, beanColDataSource);

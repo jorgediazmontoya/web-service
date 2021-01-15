@@ -19,6 +19,8 @@ public class ComprobanteGeneral {
     private String ruc;
     private String claveAcc;
     private String dirMatriz;
+    private String regimenMicroempresas;
+    private String agenteRetencion;
     private String dirEstablecimiento;
     private String contribuyenteEspecial;
     private String obligadoContabilidad;
@@ -370,6 +372,34 @@ public class ComprobanteGeneral {
      */
     public void setTotalDescuento(String totalDescuento) {
         this.totalDescuento = totalDescuento;
+    }
+
+    /**
+     * @return the regimenMicroempresas
+     */
+    public String getRegimenMicroempresas() {
+        return regimenMicroempresas;
+    }
+
+    /**
+     * @param regimenMicroempresas the regimenMicroempresas to set
+     */
+    public void setRegimenMicroempresas(String regimenMicroempresas) {
+        this.regimenMicroempresas = regimenMicroempresas;
+    }
+
+    /**
+     * @return the agenteRetencion
+     */
+    public String getAgenteRetencion() {
+        return agenteRetencion;
+    }
+
+    /**
+     * @param agenteRetencion the agenteRetencion to set
+     */
+    public void setAgenteRetencion(String agenteRetencion) {
+        this.agenteRetencion = agenteRetencion;
     }
 
 }

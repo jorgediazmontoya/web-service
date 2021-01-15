@@ -104,8 +104,9 @@ public class NotaDebito extends ComprobanteGeneral {
         Element tagValorTotal = xmlComprobante.createElement("valorTotal");
         tagValorTotal.setTextContent(getValorTotal());
         tagInfoNotaDebito.appendChild(tagValorTotal);
-        
-        tagNotaDebito.appendChild(util.construirXMLPagos(getPagos(), xmlComprobante));
+        if (getPagos()!= null && getPagos().size() > 0) {
+            tagNotaDebito.appendChild(util.construirXMLPagos(getPagos(), xmlComprobante));
+        }
         tagNotaDebito.appendChild(tagInfoNotaDebito);
 
         tagNotaDebito.appendChild(util.construirXMLMotivos(getMotivos(), xmlComprobante));

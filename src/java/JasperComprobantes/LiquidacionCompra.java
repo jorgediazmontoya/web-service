@@ -21,11 +21,13 @@ public class LiquidacionCompra extends ComprobanteGeneral {
     private List<DetalleLiquidacionCompra> detalles;
     private List<CampoAdicional> infoAdicional;
     private List<Pago> pagos;
+    private List<ReembolsoLiquidacionCompra> reembolso;
 
     public LiquidacionCompra() {
         detalles = new ArrayList();
         infoAdicional = new ArrayList();
         pagos = new ArrayList();
+        reembolso = new ArrayList();
     }
 
     /**
@@ -124,6 +126,20 @@ public class LiquidacionCompra extends ComprobanteGeneral {
      */
     public void setDireccionProveedor(String direccionProveedor) {
         this.direccionProveedor = direccionProveedor;
+    }
+
+    /**
+     * @return the reembolso
+     */
+    public List<ReembolsoLiquidacionCompra> getReembolso() {
+        return reembolso;
+    }
+
+    /**
+     * @param reembolso the reembolso to set
+     */
+    public void setReembolso(List<ReembolsoLiquidacionCompra> reembolso) {
+        this.reembolso = reembolso;
     }
 
    

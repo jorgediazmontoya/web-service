@@ -55,8 +55,10 @@ import org.xml.sax.InputSource;
 @WebService(serviceName = "ProcesarComprobanteElectronico")
 @XmlSeeAlso({Factura.class, LiquidacionCompra.class, GuiaRemision.class, ComprobanteRetencion.class, NotaDebito.class, NotaCredito.class, ComprobantePendiente.class, ConfigAplicacion.class, ConfigCorreo.class, Proforma.class})
 public class ProcesarComprobanteElectronico {
-    private final String DIR_IREPORT = "/home/Facturacion/IReport";
-    
+
+    //private final String DIR_IREPORT = "/home/Facturacion/IReport";
+    private final String DIR_IREPORT = "D:\\Desarrollos\\IReport";
+
     @WebMethod(operationName = "procesarComprobante")
     public Respuesta procesarComprobante(@WebParam(name = "comprobante") ComprobanteGeneral comprobante, @WebParam(name = "envioSRI") boolean envioSRI) {
         ConfigAplicacion configAplicacion = comprobante.getConfigAplicacion();
@@ -174,7 +176,7 @@ public class ProcesarComprobanteElectronico {
 
             return respuesta;
         }
-        
+
         respuesta.setEstadoComprobante(respuestaInterna.getEstadoComprobante());
         respuesta.setNumeroAutorizacion(respuestaInterna.getNumeroAutorizacion());
         respuesta.setFechaAutorizacion(respuestaInterna.getFechaAutorizacion());
@@ -371,8 +373,12 @@ public class ProcesarComprobanteElectronico {
                     //Ride ride = new Ride();
                     String numAutorizacion = respuestaInterna.getComprobante().getElementsByTagName("claveAcceso").item(0).getTextContent();
                     //ride.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo());
-                    JasperRide jasperRide = new JasperRide();
-                    jasperRide.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo(), DIR_IREPORT);
+                    try {
+                        JasperRide jasperRide = new JasperRide();
+                        jasperRide.CrearRide(xmlComprobante, numAutorizacion, dirGuardarDoc, configAplicacion.getDirLogo(), DIR_IREPORT);
+                    } catch (Exception e) {
+                        respuesta.addMensaje(new MensajeGenerado("1000", "ERROR GUARDANDO EL PDF AUTORIZADO. ERROR: " + e.getMessage(), null, "WARNING"));
+                    }
                     if (comprobantePendiente.isEnviarEmail()) {
                         try {
                             JCMail jcmail = new JCMail();
@@ -406,7 +412,7 @@ public class ProcesarComprobanteElectronico {
                 }
             } catch (Exception e) {
                 respuesta.setEstadoComprobante("ERROR");
-                respuesta.addMensaje(new MensajeGenerado("1000", "ERROR CONVIRTIENDO XML DE RESPUESTA A TEXTO", null, "EXCEPCION"));
+                respuesta.addMensaje(new MensajeGenerado("1000", "ERROR CONVIRTIENDO XML DE RESPUESTA A TEXTO. ERROR: " + e.getMessage(), null, "EXCEPCION"));
             }
 
         } catch (Exception ex) {
@@ -453,7 +459,7 @@ public class ProcesarComprobanteElectronico {
                 } else {
                     respuesta.addMensaje(new MensajeGenerado("1000", "ERROR ENVIANDO EL CORREO AL CLIENTE", "NO EXISTEN DESTINATARIOS", "WARNING"));
                 }
-            }else{
+            } else {
                 respuesta.addMensaje(new MensajeGenerado("1000", "EL XML NO EXISTE", "El xml en la ruta: " + dirXmlAutorizado + " NO EXISTE", "WARNING"));
             }
         } catch (Exception e) {
@@ -462,7 +468,7 @@ public class ProcesarComprobanteElectronico {
 
         return respuesta;
     }
-    
+
     @WebMethod(operationName = "obtenerComprobante")
     public RespuestaComprobanteConsultado obtenerComprobante(@WebParam(name = "claveAcceso") String claveAcceso, @WebParam(name = "ambiente") String ambiente) {
         Facturacion facturacion = new Facturacion();
@@ -493,7 +499,7 @@ public class ProcesarComprobanteElectronico {
             //Ride ride = new Ride();
             JasperRideProforma jasperRideProforma = new JasperRideProforma();
             jasperRideProforma.CrearRide(proforma, dirGuardarDoc, DIR_IREPORT);
-            respuesta.setEstadoComprobante("CREADA");
+
         } catch (Exception e) {
             respuesta.setEstadoComprobante("ERROR");
             respuesta.addMensaje(new MensajeGenerado("1000", "ERROR GUARDANDO EL PDF PROFORMA", e.getMessage(), "WARNING"));
@@ -522,8 +528,11 @@ public class ProcesarComprobanteElectronico {
                     jcmail.setMessage(crearMensajeCorreoProforma(proforma.getRazonSocialComprador(), proforma.getRazonSocial(), proforma.getNumero(), proforma.getImporteTotal()));
                     jcmail.setTo(destinatarios);
                     jcmail.SEND(nombreFichero, dirGuardarDoc, configCorreo.isSslHabilitado());
+                    respuesta.setEstadoComprobante("ENVIADA");
                 }
             } catch (Exception e) {
+                respuesta.setEstadoComprobante("ERROR EMAIL");
+
                 respuesta.addMensaje(new MensajeGenerado("1000", "ERROR ENVIANDO EL CORREO AL CLIENTE", e.getMessage(), "WARNING"));
             }
         }
@@ -534,8 +543,7 @@ public class ProcesarComprobanteElectronico {
         String mensaje = "Estimado(a),<br /><br /><strong>" + cliente + "</strong>";
         mensaje += "<br /><br />Esta es una notificacion automática de una proforma emitida por <strong>" + razonSocialEmisor + "</strong><br /><br /> ";
 
-        mensaje += "<strong>Tipo de Comprobante: </strong>PROFORMA<br />";
-        mensaje += "<strong>Nro de Comprobante: </strong>" + noProforma + "<br />";
+        mensaje += "<strong>Proforma No. </strong>" + noProforma + "<br />";
         mensaje += "<strong>Valor Total: </strong>" + importeTotal + "<br /><br />";
         mensaje += "Los detalles generales de la proforma pueden ser consultados en el archivo pdf adjunto en este correo.<br /><br />"
                 + "<strong>Atentamente,</strong><br /><br />"
@@ -636,7 +644,7 @@ public class ProcesarComprobanteElectronico {
         for (int i = 0; i < cantidad; i++) {
             Node node = campoAdicional.item(i);
             String nombre = node.getAttributes().item(0).getNodeValue();
-            if (nombre.equals("Email")) {
+            if (nombre.startsWith("Email")) {
                 if (node.getTextContent() == null || node.getTextContent().isEmpty()) {
                     break;
                 }
