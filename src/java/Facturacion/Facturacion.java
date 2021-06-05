@@ -31,6 +31,7 @@ import java.util.GregorianCalendar;
 import java.util.Properties;
 import Util.*;
 import java.net.MalformedURLException;
+import java.util.TimeZone;
 import org.apache.tomcat.jni.Time;
 
 /**
@@ -118,41 +119,6 @@ public class Facturacion {
 
     }
 
-    public RespuestaInterna ProcesarComprobanteLote(Document xmlComprobante) {
-
-        EliminarCertificado();
-        RespuestaSolicitud respuestaRecepcion = null;
-        RespuestaInterna respuestaInterna = new RespuestaInterna();
-        try {
-            respuestaRecepcion = ValidarComprobante(util.convertirXMLToString(xmlComprobante), ambiente);
-            respuestaInterna.setRespuestaRecepcion(respuestaRecepcion);
-        } catch (Exception e) {
-
-            return CrearRespuestaException("PROBLEMAS EN LA COMUNICACION CON EL SERVICIO DE RECEPCION DEL SRI");
-        }
-        if (respuestaRecepcion.getEstado().equals("DEVUELTA") && !respuestaRecepcion.getComprobantes().getComprobante().isEmpty()) {
-
-            return respuestaInterna;
-
-        } else if (respuestaRecepcion.getEstado().equals("DEVUELTA")) {
-
-            return CrearRespuestaException("RESPUESTA DE RECEPCION CON ARREGLO DE COMPROBANTES VACIOS");
-
-        } else {
-            RespuestaLote respuestaAutorizacion = null;
-            try {
-                String claveAcceso = xmlComprobante.getElementsByTagName("claveAcceso").item(0).getTextContent();
-                respuestaAutorizacion = AutorizarComprobanteLote(claveAcceso, ambiente);
-            } catch (Exception e) {
-
-                return CrearRespuestaException("PROBLEMAS EN LA COMUNINCACION CON EL SERVICIO DE AUTORIZACION DEL SRI");
-            }
-            respuestaInterna.setRespuestaLote(respuestaAutorizacion);
-            return respuestaInterna;
-        }
-
-    }
-
     public RespuestaInterna procesarComprobantesPendientesAutorizacion(String claveAcceso) {
         RespuestaComprobante respuestaAutorizacion = null;
         try {
@@ -179,15 +145,6 @@ public class Facturacion {
         AutorizacionComprobantesOffline port = service.getAutorizacionComprobantesOfflinePort();
 
         return port.autorizacionComprobante(claveAcceso);
-
-    }
-
-    private RespuestaLote AutorizarComprobanteLote(String claveAcceso, String ambiente) {
-
-        AutorizacionComprobantesOfflineService service = new AutorizacionComprobantesOfflineService(ambiente);
-        AutorizacionComprobantesOffline port = service.getAutorizacionComprobantesOfflinePort();
-
-        return port.autorizacionComprobanteLote(claveAcceso);
 
     }
 
@@ -256,75 +213,6 @@ public class Facturacion {
         return respuestaInterna;
     }
 
-    public RespuestaInterna CrearRespuestaAutorizacionLote(Autorizacion autorizacion) {
-        RespuestaInterna respuestaInterna = new RespuestaInterna();
-        try {
-
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            DOMImplementation implementation = builder.getDOMImplementation();
-            Document xmlComprobante = implementation.createDocument(null, "autorizacion", null);
-            xmlComprobante.setXmlVersion("1.0");
-            Element tagAutorizacion = xmlComprobante.getDocumentElement();
-            Element tagEstado = xmlComprobante.createElement("estado");
-            tagEstado.appendChild(xmlComprobante.createTextNode(autorizacion.getEstado()));
-            tagAutorizacion.appendChild(tagEstado);
-            respuestaInterna.setEstadoComprobante(autorizacion.getEstado());
-            if (autorizacion.getNumeroAutorizacion() != null && !autorizacion.getNumeroAutorizacion().equals("")) {
-                Element tagNumeroAutoriacion = xmlComprobante.createElement("numeroAutorizacion");
-                tagNumeroAutoriacion.appendChild(xmlComprobante.createTextNode(autorizacion.getNumeroAutorizacion()));
-                tagAutorizacion.appendChild(tagNumeroAutoriacion);
-                respuestaInterna.setNumeroAutorizacion(autorizacion.getNumeroAutorizacion());
-            }
-            // tener en cuanta el formato de la fecha
-            Element tagFechaAutorizacion = xmlComprobante.createElement("fechaAutorizacion");
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss");
-            GregorianCalendar gc = autorizacion.getFechaAutorizacion().toGregorianCalendar();
-            String formatted_string = sdf.format(gc.getTime());
-            tagFechaAutorizacion.appendChild(xmlComprobante.createTextNode(formatted_string));
-            tagAutorizacion.appendChild(tagFechaAutorizacion);
-            tagFechaAutorizacion.setAttribute("class", "fechaAutorizacion");
-            Element tagComprobante = xmlComprobante.createElement("comprobante");
-            tagComprobante.appendChild(xmlComprobante.createCDATASection(autorizacion.getComprobante()));
-            tagAutorizacion.appendChild(tagComprobante);
-            respuestaInterna.setDocAutorizado(autorizacion.getComprobante());
-            List<SRI.Autorizacion.Mensaje> mensajes = autorizacion.getMensajes().getMensaje();
-            if (mensajes != null) {
-                Element tagMensajes = xmlComprobante.createElement("mensajes");
-                for (Iterator<SRI.Autorizacion.Mensaje> it = mensajes.iterator(); it.hasNext();) {
-                    SRI.Autorizacion.Mensaje mensaje = it.next();
-                    Element tagMensaje = xmlComprobante.createElement("mensaje");
-
-                    Element tagIdentificador = xmlComprobante.createElement("identificador");
-                    tagIdentificador.appendChild(xmlComprobante.createTextNode(mensaje.getIdentificador()));
-                    tagMensaje.appendChild(tagIdentificador);
-
-                    Element tagMensajeDatos = xmlComprobante.createElement("mensaje");
-                    tagMensajeDatos.appendChild(xmlComprobante.createTextNode(mensaje.getMensaje()));
-                    tagMensaje.appendChild(tagMensajeDatos);
-
-                    if (mensaje.getInformacionAdicional() != null && !mensaje.getInformacionAdicional().equals("")) {
-                        Element tagInformacionAdicional = xmlComprobante.createElement("informacionAdicional");
-                        tagInformacionAdicional.appendChild(xmlComprobante.createTextNode(mensaje.getInformacionAdicional()));
-                        tagMensaje.appendChild(tagInformacionAdicional);
-                    }
-
-                    Element tagTipo = xmlComprobante.createElement("tipo");
-                    tagTipo.appendChild(xmlComprobante.createTextNode(mensaje.getTipo()));
-                    tagMensaje.appendChild(tagTipo);
-
-                    tagMensajes.appendChild(tagMensaje);
-                    respuestaInterna.addMensaje(new MensajeGenerado(mensaje.getIdentificador(), mensaje.getMensaje(), mensaje.getInformacionAdicional(), mensaje.getTipo()));
-                }
-                tagAutorizacion.appendChild(tagMensajes);
-            }
-            respuestaInterna.setComprobante(xmlComprobante);
-        } catch (Exception e) {
-            return CrearRespuestaException("ERROR CREANDO EL XML DE RESPUESTA DE AUTORIZACION");
-        }
-
-        return respuestaInterna;
-    }
 
     private RespuestaInterna CrearRespuestaAutorizacion(RespuestaComprobante respuestaAutorizacion) {
         RespuestaInterna respuestaInterna = new RespuestaInterna();
@@ -369,8 +257,9 @@ public class Facturacion {
             }
             // tener en cuanta el formato de la fecha
             if (autorizacion.getFechaAutorizacion() != null) {
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss");
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
                 GregorianCalendar gc = autorizacion.getFechaAutorizacion().toGregorianCalendar();
+                gc.setTimeZone(TimeZone.getTimeZone("ECT"));
                 String formatted_string = sdf.format(gc.getTime());
                 respuestaInterna.setFechaAutorizacion(formatted_string);
             }

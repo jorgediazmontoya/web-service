@@ -14,13 +14,8 @@ import JasperRide.JasperRide;
 import JasperRide.JasperRideProforma;
 import Respuesta.MensajeGenerado;
 import Respuesta.Respuesta;
-import Respuesta.RespuestaComprobanteLote;
 import Respuesta.RespuestaComprobanteConsultado;
 import Respuesta.RespuestaInterna;
-import Ride.Ride;
-import SRI.Autorizacion.Autorizacion;
-import SRI.Autorizacion.Mensaje;
-import SRI.Recepcion.Comprobante;
 
 import TiposComprobantes.*;
 import TiposComprobantes.Bloques.CampoAdicional;
@@ -28,7 +23,6 @@ import Util.Util;
 import java.util.List;
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.Properties;
 
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.transform.OutputKeys;
@@ -42,8 +36,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import Util.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.xml.sax.InputSource;
@@ -56,8 +48,8 @@ import org.xml.sax.InputSource;
 @XmlSeeAlso({Factura.class, LiquidacionCompra.class, GuiaRemision.class, ComprobanteRetencion.class, NotaDebito.class, NotaCredito.class, ComprobantePendiente.class, ConfigAplicacion.class, ConfigCorreo.class, Proforma.class})
 public class ProcesarComprobanteElectronico {
 
-    //private final String DIR_IREPORT = "/home/Facturacion/IReport";
-    private final String DIR_IREPORT = "D:\\Desarrollos\\IReport";
+    private final String DIR_IREPORT = "/home/Facturacion/IReport";
+   // private final String DIR_IREPORT = "D:\\Desarrollos\\IReport";
 
     @WebMethod(operationName = "procesarComprobante")
     public Respuesta procesarComprobante(@WebParam(name = "comprobante") ComprobanteGeneral comprobante, @WebParam(name = "envioSRI") boolean envioSRI) {

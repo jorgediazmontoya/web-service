@@ -49,7 +49,7 @@ public class Factura extends ComprobanteGeneral {
         setTipoDoc("factura");
         Document xmlComprobante = super.crearXMLComprobante();
         Element tagFactura = xmlComprobante.getDocumentElement();
-        tagFactura.setAttribute("version", "1.0.0");
+        tagFactura.setAttribute("version", "1.1.0");
         tagFactura.setAttribute("id", "comprobante");
 
         Element tagInfoFactura = xmlComprobante.createElement("infoFactura");

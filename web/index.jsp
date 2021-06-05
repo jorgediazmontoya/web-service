@@ -12,6 +12,6 @@
         <title>JSP Page</title>
     </head>
     <body>
-        Bienvenido
+        Version con regimen microempresa y agente de retencion como tag del xml
     </body>
 </html>
