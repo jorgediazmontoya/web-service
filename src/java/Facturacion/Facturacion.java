@@ -259,7 +259,6 @@ public class Facturacion {
             if (autorizacion.getFechaAutorizacion() != null) {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
                 GregorianCalendar gc = autorizacion.getFechaAutorizacion().toGregorianCalendar();
-                gc.setTimeZone(TimeZone.getTimeZone("ECT"));
                 String formatted_string = sdf.format(gc.getTime());
                 respuestaInterna.setFechaAutorizacion(formatted_string);
             }

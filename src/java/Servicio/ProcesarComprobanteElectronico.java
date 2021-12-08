@@ -48,8 +48,8 @@ import org.xml.sax.InputSource;
 @XmlSeeAlso({Factura.class, LiquidacionCompra.class, GuiaRemision.class, ComprobanteRetencion.class, NotaDebito.class, NotaCredito.class, ComprobantePendiente.class, ConfigAplicacion.class, ConfigCorreo.class, Proforma.class})
 public class ProcesarComprobanteElectronico {
 
-    private final String DIR_IREPORT = "/home/Facturacion/IReport";
-   // private final String DIR_IREPORT = "D:\\Desarrollos\\IReport";
+    //private final String DIR_IREPORT = "/home/Facturacion/IReport";
+    private final String DIR_IREPORT = "C:\\Desarrollos\\IReport";
 
     @WebMethod(operationName = "procesarComprobante")
     public Respuesta procesarComprobante(@WebParam(name = "comprobante") ComprobanteGeneral comprobante, @WebParam(name = "envioSRI") boolean envioSRI) {

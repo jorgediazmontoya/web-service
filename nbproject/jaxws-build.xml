@@ -45,7 +45,7 @@
     </target>
     <target name="wsimport-client-AutorizacionComprobantesOffline" depends="wsimport-init">
         <mkdir dir="${build.generated.dir}/jax-wsCache/AutorizacionComprobantesOffline"/>
-        <wsimport sourcedestdir="${build.generated.dir}/jax-wsCache/AutorizacionComprobantesOffline" destdir="${build.generated.dir}/jax-wsCache/AutorizacionComprobantesOffline" wsdl="${basedir}/${conf-dir}xml-resources/web-service-references/AutorizacionComprobantesOffline/wsdl/celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline.wsdl" catalog="catalog.xml" extension="true" verbose="true" fork="false" wsdlLocation="https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl" xnocompile="true" xendorsed="true" package="SRI.Autorizacion">
+        <wsimport sourcedestdir="${build.generated.dir}/jax-wsCache/AutorizacionComprobantesOffline" destdir="${build.generated.dir}/jax-wsCache/AutorizacionComprobantesOffline" wsdl="${basedir}/${conf-dir}xml-resources/web-service-references/AutorizacionComprobantesOffline/wsdl/celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline.wsdl" catalog="catalog.xml" encoding="${source.encoding}" extension="true" verbose="true" fork="false" wsdlLocation="https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl" xnocompile="true" xendorsed="true" package="SRI.Autorizacion">
             <depends file="${basedir}/${conf-dir}xml-resources/web-service-references/AutorizacionComprobantesOffline/wsdl/celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline.wsdl"/>
             <produces dir="${build.generated.dir}/jax-wsCache/AutorizacionComprobantesOffline"/>
         </wsimport>
@@ -61,7 +61,7 @@
     </target>
     <target name="wsimport-client-RecepcionComprobantesOffline" depends="wsimport-init">
         <mkdir dir="${build.generated.dir}/jax-wsCache/RecepcionComprobantesOffline"/>
-        <wsimport sourcedestdir="${build.generated.dir}/jax-wsCache/RecepcionComprobantesOffline" destdir="${build.generated.dir}/jax-wsCache/RecepcionComprobantesOffline" wsdl="${basedir}/${conf-dir}xml-resources/web-service-references/RecepcionComprobantesOffline/wsdl/celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline.wsdl" catalog="catalog.xml" extension="true" verbose="true" fork="false" wsdlLocation="https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl" xnocompile="true" xendorsed="true" package="SRI.Recepcion">
+        <wsimport sourcedestdir="${build.generated.dir}/jax-wsCache/RecepcionComprobantesOffline" destdir="${build.generated.dir}/jax-wsCache/RecepcionComprobantesOffline" wsdl="${basedir}/${conf-dir}xml-resources/web-service-references/RecepcionComprobantesOffline/wsdl/celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline.wsdl" catalog="catalog.xml" encoding="${source.encoding}" extension="true" verbose="true" fork="false" wsdlLocation="https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl" xnocompile="true" xendorsed="true" package="SRI.Recepcion">
             <depends file="${basedir}/${conf-dir}xml-resources/web-service-references/RecepcionComprobantesOffline/wsdl/celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline.wsdl"/>
             <produces dir="${build.generated.dir}/jax-wsCache/RecepcionComprobantesOffline"/>
         </wsimport>
