@@ -40,7 +40,7 @@ public class ComprobanteGeneral {
     private String obligadoContabilidad;
     private String tipoDoc;
     private String fechaEmision;
-
+    
     public Document crearXMLComprobante() throws ParserConfigurationException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
